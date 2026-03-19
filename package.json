@@ -1,0 +1,17 @@
+{
+  "name": "fool-game",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.30.3",
+  "dependencies": {
+    "rxjs": "^7.8.2",
+    "underscore": "^1.13.8"
+  }
+}
