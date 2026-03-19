@@ -66,13 +66,41 @@ describe("rules.processIntent", () => {
         hands: [
             { playerId: 0, cards: [{ id: "p0c1", rank: "K", suit: "hearts", value: 13 }] },
             { playerId: 1, cards: [{ id: "c3", rank: "7", suit: "spades", value: 7 }] }
-        ]
+        ],
+        currentDefendId: 1
     };
     const intentCorrect = { action: "PASS", playerId: 1, cardId: "c3" };
     const outcome = rules.processIntent(stateToPassCorrect, intentCorrect);
     expect(outcome.type).toBe("SUCCESS");
     if (outcome.type === "SUCCESS") {
         expect(outcome.table.currentDefendId).toBe(0); // Rotated
+    }
+  });
+
+  it("should reject transfer (PASS) if not the defender", () => {
+    const state = { ...initialState, attack: [{ id: "a1", rank: "7", suit: "diamonds", value: 7 }] };
+    // Player 0 is attacker, currentDefendId is 1. P0 tries to PASS.
+    const intent = { action: "PASS", playerId: 0, cardId: "c1" };
+    const outcome = rules.processIntent(state, intent);
+    expect(outcome.type).toBe("ERROR");
+    if (outcome.type === "ERROR") {
+        expect(outcome.log).toContain("Only the defender can transfer");
+    }
+  });
+
+  it("should reject transfer (PASS) if already defending", () => {
+    const state = { 
+        ...initialState, 
+        attack: [{ id: "a1", rank: "7", suit: "diamonds", value: 7 }],
+        defense: [{ id: "d1", rank: "8", suit: "diamonds", value: 8 }],
+        currentDefendId: 1
+    };
+    // P1 (defender) has an 7s in hand but already defended one card
+    const intent = { action: "PASS", playerId: 1, cardId: "c3" }; 
+    const outcome = rules.processIntent(state, intent);
+    expect(outcome.type).toBe("ERROR");
+    if (outcome.type === "ERROR") {
+        expect(outcome.log).toContain("Cannot transfer");
     }
   });
 

@@ -49,23 +49,16 @@ const onHumanCardClick = (card: any) => {
     const isMyTurnToAttack = table.currentTurnId === HUMAN_ID;
     const isMyTurnToDefend = table.currentDefendId === HUMAN_ID;
 
-    // Logic: Decide if this is an attack or defense
     if (isMyTurnToAttack || (!isMyTurnToDefend && table.attack.length > 0)) {
-        // Human wants to attack or throw in
-        intent$.next({
-            type: "ATTACK_INTENT",
-            playerId: HUMAN_ID,
-            cardId: card.id,
-            action: "ATTACK"
-        });
+        intent$.next({ type: "ATTACK_INTENT", playerId: HUMAN_ID, cardId: card.id, action: "ATTACK" });
     } else if (isMyTurnToDefend && table.attack.length > table.defense.length) {
-        // Human wants to defend
-        intent$.next({
-            type: "DEFENSE_INTENT",
-            playerId: HUMAN_ID,
-            cardId: card.id,
-            action: "DEFEND"
-        });
+        // Can I transfer? (rank match + no defense started)
+        const allRanks = [...table.attack, ...table.defense].map(c => c.rank);
+        if (table.defense.length === 0 && allRanks.includes(card.rank)) {
+            intent$.next({ type: "PASS_INTENT", playerId: HUMAN_ID, cardId: card.id, action: "PASS" });
+        } else {
+            intent$.next({ type: "DEFENSE_INTENT", playerId: HUMAN_ID, cardId: card.id, action: "DEFEND" });
+        }
     }
 };
 

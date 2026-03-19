@@ -102,9 +102,12 @@ const handleDefend = (table: TableState, playerId: number, cardId: string): Acti
 };
 
 const handlePass = (table: TableState, playerId: number, cardId: string): ActionOutcome => {
+  if (table.currentDefendId !== playerId) return { type: 'ERROR', log: '🚫 Only the defender can transfer.' };
+  
   const playerHand = table.hands.find(h => h.playerId === playerId);
   const card = playerHand?.cards.find(c => c.id === cardId);
   const allRanks = getTableRanks(table);
+  
   if (!card || table.defense.length > 0 || !allRanks.includes(card.rank)) return { type: 'ERROR', log: '🚫 Cannot transfer.' };
 
   const nextDefendId = (table.currentDefendId + 1) % table.players.length;
@@ -112,7 +115,7 @@ const handlePass = (table: TableState, playerId: number, cardId: string): Action
   return { 
     type: 'SUCCESS', 
     table: { ...postPass, attack: [...postPass.attack, card], currentDefendId: nextDefendId, currentTurnId: table.currentDefendId }, 
-    log: `🔄 ${table.players.find(p => p.id === playerId)?.name} transferred.` 
+    log: `🔄 ${table.players.find(p => p.id === playerId)?.name} transferred to ${table.players.find(p => p.id === nextDefendId)?.name}` 
   };
 };
 
