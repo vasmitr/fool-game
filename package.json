@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run",
+    "dev": "tsx src/index.ts"
   },
   "keywords": [],
   "author": "",
@@ -13,5 +14,10 @@
   "dependencies": {
     "rxjs": "^7.8.2",
     "underscore": "^1.13.8"
+  },
+  "devDependencies": {
+    "@types/underscore": "^1.13.0",
+    "vitest": "^4.1.0",
+    "tsx": "^4.0.0"
   }
 }
