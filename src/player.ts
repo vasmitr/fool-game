@@ -32,6 +32,7 @@ const propose = (playerId: number) => (table: TableState): Intent | null => {
       table.attack,
       table.defense,
       table.trumps,
+      table.deck.length,
     );
     if (!suggestion) return null;
     if (suggestion.action === "TAKE") return { action: "TAKE", playerId };
@@ -48,6 +49,7 @@ const propose = (playerId: number) => (table: TableState): Intent | null => {
     table.defense,
     table.trumps,
     defenderHandCount,
+    table.deck.length,
   );
   if (suggestion) return { action: "ATTACK", playerId, cardId: suggestion.cardId };
   if (

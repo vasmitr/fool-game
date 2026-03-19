@@ -21,7 +21,7 @@ describe("findBestDefense", () => {
   it("should pass (transfer) on a fresh table", () => {
     const attackCards: Card[] = [{ id: "a1", rank: "10", suit: "spades", value: 10 }];
     const playerCards: Card[] = [{ id: "p1", rank: "10", suit: "clubs", value: 10 }];
-    const action = findBestDefense(playerCards, attackCards, [], trumps);
+    const action = findBestDefense(playerCards, attackCards, [], trumps, 36);
     expect(action).toEqual({ action: "PASS", cardId: "p1" });
   });
 
@@ -36,31 +36,55 @@ describe("findBestDefense", () => {
     const playerCards: Card[] = [
       { id: "p1", rank: "10", suit: "clubs", value: 10 }
     ];
-    // Player has a 10, but since d1 is already there, they cannot transfer
-    // Actually, findBestDefense(playerCards, attackCards, defenseCards) 
-    // checks indexToDefend = defenseCards.length = 1.
-    // Card to defend is attackCards[1] which is 10d.
-    // Player has 10c. 
-    // HigherCard check: no card can cover 10d.
-    // canPass check: defenseCards.length is 1, so canPass is false.
-    // sameRankCards check: sameRankCards.length is 1.
-    // But canPass is false, so it moves to TAKE.
-    const action = findBestDefense(playerCards, attackCards, defenseCards, trumps);
+    const action = findBestDefense(playerCards, attackCards, defenseCards, trumps, 36);
     expect(action).toEqual({ action: "TAKE", cardId: "a2" });
   });
 
   it("should defeat with a higher card", () => {
     const attackCards: Card[] = [{ id: "a1", rank: "10", suit: "spades", value: 10 }];
     const playerCards: Card[] = [{ id: "p1", rank: "J", suit: "spades", value: 11 }];
-    const action = findBestDefense(playerCards, attackCards, [], trumps);
+    const action = findBestDefense(playerCards, attackCards, [], trumps, 36);
     expect(action).toEqual({ action: "DEFEND", cardId: "p1" });
   });
 
   it("should take if no defense possible", () => {
     const attackCards: Card[] = [{ id: "a1", rank: "A", suit: "spades", value: 14 }];
     const playerCards: Card[] = [{ id: "p1", rank: "7", suit: "clubs", value: 7 }];
-    const action = findBestDefense(playerCards, attackCards, [], trumps);
+    const action = findBestDefense(playerCards, attackCards, [], trumps, 36);
     expect(action).toEqual({ action: "TAKE", cardId: "a1" });
+  });
+
+  it("should use the minimum sufficient card, not the first found", () => {
+    const attackCards: Card[] = [{ id: "a1", rank: "8", suit: "spades", value: 8 }];
+    const playerCards: Card[] = [
+      { id: "p1", rank: "A", suit: "spades", value: 14 },
+      { id: "p2", rank: "9", suit: "spades", value: 9 },
+    ];
+    // Both beat 8♠; 9♠ is cheaper — pick p2
+    const action = findBestDefense(playerCards, attackCards, [], trumps, 36);
+    expect(action).toEqual({ action: "DEFEND", cardId: "p2" });
+  });
+
+  it("early game: should prefer same-suit card over trump", () => {
+    const attackCards: Card[] = [{ id: "a1", rank: "8", suit: "spades", value: 8 }];
+    const playerCards: Card[] = [
+      { id: "p1", rank: "7", suit: "hearts", value: 7 },  // trump 7 — beats non-trump
+      { id: "p2", rank: "9", suit: "spades", value: 9 },  // same-suit 9
+    ];
+    // Full deck: score(trump 7) = 7 + 14 = 21 vs score(9♠) = 9 → pick p2
+    const action = findBestDefense(playerCards, attackCards, [], trumps, 36);
+    expect(action).toEqual({ action: "DEFEND", cardId: "p2" });
+  });
+
+  it("late game: should use trump when it is cheaper than the same-suit option", () => {
+    const attackCards: Card[] = [{ id: "a1", rank: "8", suit: "spades", value: 8 }];
+    const playerCards: Card[] = [
+      { id: "p1", rank: "7", suit: "hearts", value: 7 },  // trump 7
+      { id: "p2", rank: "K", suit: "spades", value: 13 }, // same-suit K
+    ];
+    // Empty deck: score(trump 7) = 7 vs score(K♠) = 13 → pick p1
+    const action = findBestDefense(playerCards, attackCards, [], trumps, 0);
+    expect(action).toEqual({ action: "DEFEND", cardId: "p1" });
   });
 });
 
@@ -72,7 +96,7 @@ describe("findBestAttack", () => {
       { id: "p1", rank: "A", suit: "spades", value: 14 },
       { id: "p2", rank: "6", suit: "clubs", value: 6 },
     ];
-    const action = findBestAttack(playerCards, [], [], trumps, 6);
+    const action = findBestAttack(playerCards, [], [], trumps, 6, 36);
     expect(action).toEqual({ action: "ATTACK", cardId: "p2" });
   });
 
@@ -84,16 +108,16 @@ describe("findBestAttack", () => {
     const tableCards: Card[] = [
       { id: "a1", rank: "A", suit: "diamonds", value: 14 },
     ];
-    const action = findBestAttack(playerCards, tableCards, [], trumps, 6);
+    const action = findBestAttack(playerCards, tableCards, [], trumps, 6, 36);
     expect(action).toEqual({ action: "ATTACK", cardId: "p1" });
   });
 
   it("should avoid trumps if possible", () => {
     const playerCards: Card[] = [
       { id: "p1", rank: "6", suit: "hearts", value: 6 }, // trump
-      { id: "p2", rank: "7", suit: "clubs", value: 7 }, // non-trump
+      { id: "p2", rank: "7", suit: "clubs", value: 7 },  // non-trump
     ];
-    const action = findBestAttack(playerCards, [], [], trumps, 6);
+    const action = findBestAttack(playerCards, [], [], trumps, 6, 36);
     expect(action).toEqual({ action: "ATTACK", cardId: "p2" });
   });
 
@@ -104,7 +128,7 @@ describe("findBestAttack", () => {
     const tableCards: Card[] = [
       { id: "a1", rank: "J", suit: "spades", value: 11 },
     ];
-    const action = findBestAttack(playerCards, tableCards, [], trumps, 6);
+    const action = findBestAttack(playerCards, tableCards, [], trumps, 6, 36);
     expect(action).toBeNull();
   });
 
@@ -113,10 +137,9 @@ describe("findBestAttack", () => {
       { id: "p1", rank: "10", suit: "clubs", value: 10 },
     ];
     const attackCards: Card[] = [
-        { id: "a1", rank: "J", suit: "spades", value: 11 },
+      { id: "a1", rank: "J", suit: "spades", value: 11 },
     ];
-    // Defender has only 1 card, and there's already 1 card on the table
-    const action = findBestAttack(playerCards, attackCards, [], trumps, 1);
+    const action = findBestAttack(playerCards, attackCards, [], trumps, 1, 36);
     expect(action).toBeNull();
   });
 
@@ -128,9 +151,9 @@ describe("findBestAttack", () => {
       { id: "a1", rank: "6", suit: "spades", value: 6 },
     ];
     const defenseCards: Card[] = [
-      { id: "d1", rank: "A", suit: "hearts", value: 14 }, // rank A
+      { id: "d1", rank: "A", suit: "hearts", value: 14 },
     ];
-    const action = findBestAttack(playerCards, attackCards, defenseCards, trumps, 6);
+    const action = findBestAttack(playerCards, attackCards, defenseCards, trumps, 6, 36);
     expect(action).toEqual({ action: "ATTACK", cardId: "p1" });
   });
 
@@ -144,9 +167,39 @@ describe("findBestAttack", () => {
     const defenseCards: Card[] = [
       { id: "d1", rank: "7", suit: "spades", value: 7 },
     ];
-    // Ranks on table: 6, 7. Player has King.
-    const action = findBestAttack(playerCards, attackCards, defenseCards, trumps, 6);
+    const action = findBestAttack(playerCards, attackCards, defenseCards, trumps, 6, 36);
     expect(action).toBeNull();
+  });
+
+  it("when defender is losing: should pile on with highest card", () => {
+    const playerCards: Card[] = [
+      { id: "p1", rank: "6", suit: "clubs", value: 6 },
+      { id: "p2", rank: "K", suit: "clubs", value: 13 },
+    ];
+    const attackCards: Card[] = [
+      { id: "a1", rank: "6", suit: "spades", value: 6 },   // undefended
+      { id: "a2", rank: "K", suit: "spades", value: 13 },  // undefended
+    ];
+    // defenderIsLosing=true → dir=-1 → prefer highest; both non-trump
+    // score(6♣)=-6, score(K♣)=-13 → pick K♣
+    const action = findBestAttack(playerCards, attackCards, [], trumps, 6, 36);
+    expect(action).toEqual({ action: "ATTACK", cardId: "p2" });
+  });
+
+  it("when defender is losing and only trumps available: should pile on with highest trump", () => {
+    const playerCards: Card[] = [
+      { id: "p1", rank: "6", suit: "hearts", value: 6 },  // trump 6
+      { id: "p2", rank: "A", suit: "hearts", value: 14 }, // trump ace
+    ];
+    const attackCards: Card[] = [
+      { id: "a1", rank: "6", suit: "spades", value: 6 },  // undefended — rank 6 valid
+      { id: "a2", rank: "A", suit: "spades", value: 14 }, // undefended — rank A valid
+    ];
+    // defenderIsLosing=true → dir=-1, trumpPenalty=0
+    // nonTrumps=[] → candidates=all trumps
+    // score(6♥)=-6, score(A♥)=-14 → pick trump ace
+    const action = findBestAttack(playerCards, attackCards, [], trumps, 6, 36);
+    expect(action).toEqual({ action: "ATTACK", cardId: "p2" });
   });
 });
 

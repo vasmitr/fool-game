@@ -8,32 +8,44 @@ export function getDeck() {
   return shuffle(deck);
 }
 
+// dir=1: prefer lowest card (save strong ones).
+// dir=-1: prefer highest card (pile on / spend freely).
+// Trump penalty scales with deck fullness; disappears when dir=-1 (already spending).
+function cardScore(c: Card, trumps: Card, deckSize: number, dir: number): number {
+  const trumpPenalty = dir < 0 ? 0 : (deckSize / 36) * 14;
+  return dir * c.value + (c.suit === trumps.suit ? trumpPenalty : 0);
+}
+
 export function findBestDefense(
   playerCards: Card[],
   attackCards: Card[],
   defenseCards: Card[],
   trumps: Card,
+  deckSize: number,
 ) {
   const indexToDefend = defenseCards.length;
   if (indexToDefend >= attackCards.length) return null;
 
   const cardToDefend = attackCards[indexToDefend];
 
-  const sameRankCards = playerCards.filter(
-    (playerCard) => playerCard.rank === cardToDefend.rank,
+  const validDefenses = playerCards.filter(
+    (c) =>
+      (c.value > cardToDefend.value && c.suit === cardToDefend.suit) ||
+      (c.suit === trumps.suit && cardToDefend.suit !== trumps.suit),
   );
 
-  const higherCard = playerCards.find(
-    (playerCard) =>
-      (playerCard.value > cardToDefend.value &&
-        playerCard.suit === cardToDefend.suit) ||
-      (playerCard.suit === trumps.suit && cardToDefend.suit !== trumps.suit),
-  );
-
-  if (higherCard) {
-    return { action: "DEFEND", cardId: higherCard.id };
+  if (validDefenses.length > 0) {
+    const bestDefense = validDefenses.reduce((prev, curr) =>
+      cardScore(curr, trumps, deckSize, 1) < cardScore(prev, trumps, deckSize, 1)
+        ? curr
+        : prev,
+    );
+    return { action: "DEFEND", cardId: bestDefense.id };
   }
 
+  const sameRankCards = playerCards.filter(
+    (c) => c.rank === cardToDefend.rank,
+  );
   if (sameRankCards.length > 0 && defenseCards.length === 0) {
     return { action: "PASS", cardId: sameRankCards[0].id };
   }
@@ -47,6 +59,7 @@ export function findBestAttack(
   defenseCards: Card[],
   trumps: Card,
   defenderHandCount: number,
+  deckSize: number,
 ) {
   if (playerCards.length === 0) return null;
   if (attackCards.length >= defenderHandCount) return null;
@@ -63,12 +76,18 @@ export function findBestAttack(
 
   if (validCards.length === 0) return null;
 
-  // Strategy: Play lowest non-trump card first
+  // When defender is losing (undefended cards exist), flip to highest card to
+  // maximize what they take; otherwise preserve strong cards and avoid trumps.
+  // dir=-1 when defender is losing: flip to highest card to maximize their take.
+  const dir = attackCards.length > defenseCards.length ? -1 : 1;
+
   const nonTrumps = validCards.filter((c) => c.suit !== trumps.suit);
   const candidates = nonTrumps.length > 0 ? nonTrumps : validCards;
 
   const bestCard = candidates.reduce((prev, curr) =>
-    curr.value < prev.value ? curr : prev,
+    cardScore(curr, trumps, deckSize, dir) < cardScore(prev, trumps, deckSize, dir)
+      ? curr
+      : prev,
   );
 
   return { action: "ATTACK", cardId: bestCard.id };
