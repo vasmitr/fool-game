@@ -10,111 +10,202 @@
         background: #1a1a2e;
         color: #e9e9e9;
         margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100vh;
+        overflow: hidden;
+      }
+      .game-board {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
         padding: 20px;
+        box-sizing: border-box;
+      }
+      .top-area {
+        display: flex;
+        justify-content: space-around;
+        align-items: flex-start;
+      }
+      .center-area {
+        flex-grow: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+      }
+      .bottom-area {
         display: flex;
         flex-direction: column;
         align-items: center;
       }
-      .container {
-        max-width: 800px;
-        width: 100%;
-        background: #16213e;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-      }
-      h1 {
-        text-align: center;
-        color: #0f3460;
-        background: #e94560;
-        padding: 10px;
-        border-radius: 8px;
-        margin-top: 0;
-      }
-      .stats {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 20px;
-        font-weight: bold;
-      }
       .table-area {
-        background: #0f3460;
-        padding: 20px;
-        border-radius: 8px;
-        min-height: 100px;
+        background: rgba(15, 52, 96, 0.5);
+        padding: 40px;
+        border-radius: 50%;
+        min-height: 350px;
+        min-width: 600px;
         display: flex;
         flex-wrap: wrap;
-        gap: 10px;
+        gap: 20px;
         justify-content: center;
-        margin-bottom: 20px;
-        border: 2px dashed #e94560;
+        align-items: center;
+        border: 2px dashed rgba(233, 69, 96, 0.3);
+        position: relative;
       }
       .card {
-        width: 60px;
-        height: 90px;
+        width: 70px;
+        height: 105px;
         background: white;
         color: black;
-        border-radius: 6px;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: bold;
         font-size: 1.2rem;
-        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         position: relative;
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s;
+        user-select: none;
+        flex-shrink: 0;
       }
-      .card.hearts,
-      .card.diamonds {
-        color: #e94560;
+      .card:hover {
+        transform: translateY(-10px) scale(1.05);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+        z-index: 10;
       }
-      .card.spades,
-      .card.clubs {
-        color: #1a1a2e;
+      .card.hearts, .card.diamonds { color: #e94560; }
+      .card.spades, .card.clubs { color: #1a1a2e; }
+      
+      .card-back {
+        background: #0f3460;
+        background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,.05) 5px, rgba(255,255,255,.05) 10px);
+        border: 2px solid #e94560;
       }
-      .players {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 15px;
+
+      .deck-area {
+        position: absolute;
+        left: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
       }
+      .deck-stack {
+        position: relative;
+        width: 70px;
+        height: 105px;
+      }
+      .deck-card {
+        position: absolute;
+        left: 0;
+        top: 0;
+      }
+      .trump-card {
+        transform: rotate(90deg) !important;
+        left: 40px !important;
+        transition: none !important;
+        z-index: -1;
+      }
+
+      .discard-area {
+        position: absolute;
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      @keyframes deal {
+        from { transform: scale(0.5); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+      }
+      .card-dealt {
+        animation: deal 0.3s ease-out;
+      }
+
+      @keyframes throw-from-bottom {
+        from { transform: translateY(200px) rotate(20deg); opacity: 0; }
+        to { transform: translateY(0) rotate(0deg); opacity: 1; }
+      }
+      .throw-bottom {
+        animation: throw-from-bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+
+      @keyframes throw-from-top {
+        from { transform: translateY(-200px) rotate(-20deg); opacity: 0; }
+        to { transform: translateY(0) rotate(0deg); opacity: 1; }
+      }
+      .throw-top {
+        animation: throw-from-top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+      .discard-stack {
+        position: relative;
+        width: 70px;
+        height: 105px;
+      }
+
       .player-box {
         background: #0f3460;
-        padding: 10px;
-        border-radius: 8px;
+        padding: 15px;
+        border-radius: 12px;
         border: 2px solid transparent;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-width: 120px;
+        transition: all 0.3s;
       }
       .player-box.active {
         border-color: #e94560;
-        background: #1a1a2e;
+        box-shadow: 0 0 15px rgba(233, 69, 96, 0.5);
+        background: #16213e;
       }
       .player-box.defender {
         border-color: #f7d794;
       }
-      .log {
-        margin-top: 20px;
-        height: 150px;
-        overflow-y: auto;
-        background: #000;
-        color: #0f0;
-        font-family: monospace;
-        padding: 10px;
-        font-size: 0.8rem;
-        border-radius: 4px;
+      .mini-hand {
+        display: flex;
+        margin-top: 10px;
+        height: 30px;
       }
-      #human-hand.active-turn {
-        border: 2px solid #e94560;
-        box-shadow: 0 0 15px rgba(233, 69, 96, 0.4);
+      .mini-card {
+        width: 15px;
+        height: 25px;
+        background: #e94560;
+        border: 1px solid white;
+        border-radius: 2px;
+        margin-left: -10px;
+        box-shadow: 1px 1px 2px rgba(0,0,0,0.5);
       }
-      .overlay {
-        position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,0.85);
-        display: none;
+      .mini-card:first-child { margin-left: 0; }
+
+      .human-area {
+        width: 100%;
+        display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
-        z-index: 100;
+        gap: 15px;
       }
-      .overlay h2 { font-size: 3rem; color: #e94560; margin-bottom: 20px; }
+      .human-hand {
+        display: flex;
+        gap: 10px;
+        flex-wrap: nowrap;
+        justify-content: center;
+        padding: 20px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 12px;
+        max-width: 90vw;
+        overflow-x: auto;
+      }
       .btn-primary {
           background: #e94560;
           color: white;
@@ -127,6 +218,53 @@
           transition: transform 0.2s;
       }
       .btn-primary:hover { transform: scale(1.05); }
+      .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+      
+      .log-container {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        width: 250px;
+        height: 150px;
+        background: rgba(0, 0, 0, 0.7);
+        border-radius: 8px;
+        padding: 10px;
+        font-family: monospace;
+        font-size: 0.7rem;
+        color: #0f0;
+        overflow-y: auto;
+        opacity: 0.3;
+        transition: opacity 0.3s;
+        pointer-events: none;
+        z-index: 100;
+      }
+      .log-container:hover { opacity: 1; pointer-events: auto; }
+
+      .bout-pair {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        height: 125px;
+        width: 80px;
+      }
+      .defender-card {
+        position: absolute;
+        top: 20px;
+        left: 10px;
+        z-index: 1;
+      }
+
+      .overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.9);
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+      .overlay h2 { font-size: 3rem; color: #e94560; margin-bottom: 20px; }
     </style>
   </head>
   <body>
@@ -135,78 +273,49 @@
         <button id="btn-restart-overlay" class="btn-primary">PLAY AGAIN</button>
     </div>
 
-    <div class="container">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h1>Durak</h1>
-        <button id="btn-restart-main" style="background: transparent; border: 1px solid #e94560; color: #e94560; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">RESTART</button>
-      </div>
-
-      <div class="stats" id="game-stats">
-        <div>Deck: <span id="deck-count">0</span></div>
-        <div>Trumps: <span id="trump-info">?</span></div>
-      </div>
-
-      <div class="table-area" id="bout-area">
-        <!-- Cards currently being played -->
-      </div>
-
-      <div class="players" id="player-list">
-        <!-- Bot players go here -->
-      </div>
-
-      <div style="margin-top: 30px; text-align: center">
-        <h2 id="human-name">Albert Einstein (You)</h2>
-        <div id="human-controls" style="margin-bottom: 10px; display: none">
-          <button
-            id="btn-pass"
-            style="
-              background: #e94560;
-              color: white;
-              border: none;
-              padding: 10px 20px;
-              border-radius: 4px;
-              cursor: pointer;
-              font-weight: bold;
-            "
-          >
-            PASS / END TURN
-          </button>
-          <button
-            id="btn-take"
-            style="
-              background: #f7d794;
-              color: #1a1a2e;
-              border: none;
-              padding: 10px 20px;
-              border-radius: 4px;
-              cursor: pointer;
-              font-weight: bold;
-              margin-left: 10px;
-            "
-          >
-            TAKE CARDS
-          </button>
+    <div class="game-board">
+        <div class="top-area" id="bot-players">
+            <!-- Bot players rendered here -->
         </div>
-        <div
-          id="human-hand"
-          style="
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: center;
-            min-height: 100px;
-            padding: 15px;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 8px;
-          "
-        >
-          <!-- Human cards go here -->
-        </div>
-      </div>
 
-      <div class="log" id="game-log">
-        <div>Waiting for game start...</div>
-      </div>
+        <div class="center-area">
+            <div class="deck-area">
+                <div class="deck-stack" id="deck-stack">
+                    <!-- Deck cards rendered here -->
+                </div>
+                <div style="margin-top: 50px; font-weight: bold; color: #888; text-align: center;">DECK: <span id="deck-count">0</span></div>
+            </div>
+
+            <div class="table-area" id="bout-area">
+                <!-- Active cards rendered here -->
+            </div>
+
+            <div class="discard-area">
+                <div class="discard-stack" id="discard-stack">
+                    <!-- Discarded cards rendered here -->
+                </div>
+                <div style="margin-top: 10px; font-weight: bold; color: #888; text-align: center;">BEATEN: <span id="discard-count">0</span></div>
+            </div>
+        </div>
+
+        <div class="bottom-area">
+            <div class="human-area">
+                <div id="human-controls" style="display: none; gap: 10px;">
+                    <button id="btn-pass" class="btn-primary" style="background: #e94560;">PASS / END TURN</button>
+                    <button id="btn-take" class="btn-primary" style="background: #f7d794; color: #1a1a2e;">TAKE CARDS</button>
+                </div>
+                <div class="human-hand" id="human-hand">
+                    <!-- Human cards rendered here -->
+                </div>
+                <h3 id="human-name" style="margin: 5px 0 0 0;">You</h3>
+            </div>
+        </div>
+
+        <div id="game-log" class="log-container">
+            <div>Game log started...</div>
+        </div>
+
+        <button id="btn-restart-main" style="position: fixed; top: 10px; right: 10px; background: transparent; border: 1px solid #e94560; color: #e94560; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; z-index: 10;">RESTART</button>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
