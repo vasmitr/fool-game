@@ -1,14 +1,18 @@
-import { table$, log$ } from "./store";
+import { table$, log$, intent$ } from "./store";
 import "./player";
+import { findBestDefense, findBestAttack } from "./helpers";
 
-// ... (keep previous elements)
 const deckCount = document.getElementById("deck-count")!;
 const trumpInfo = document.getElementById("trump-info")!;
 const boutArea = document.getElementById("bout-area")!;
 const playerList = document.getElementById("player-list")!;
 const gameLog = document.getElementById("game-log")!;
+const humanHandArea = document.getElementById("human-hand")!;
+const humanControls = document.getElementById("human-controls")!;
+const btnPass = document.getElementById("btn-pass")!;
+const btnTake = document.getElementById("btn-take")!;
 
-// ... (keep helper functions)
+const HUMAN_ID = 0;
 
 const getSuitSymbol = (suit: string) => {
     switch(suit) {
@@ -20,10 +24,14 @@ const getSuitSymbol = (suit: string) => {
     }
 }
 
-const renderCard = (card: any) => {
+const renderCard = (card: any, onClick?: () => void) => {
     const cardEl = document.createElement("div");
     cardEl.className = `card ${card.suit}`;
     cardEl.textContent = `${card.rank}${getSuitSymbol(card.suit)}`;
+    if (onClick) {
+        cardEl.style.cursor = "pointer";
+        cardEl.addEventListener("click", onClick);
+    }
     return cardEl;
 }
 
@@ -35,13 +43,55 @@ const logMessage = (msg: string) => {
 
 log$.subscribe(msg => logMessage(msg));
 
+// Handle human clicks
+const onHumanCardClick = (card: any) => {
+    const table = table$.value;
+    const isMyTurnToAttack = table.currentTurnId === HUMAN_ID;
+    const isMyTurnToDefend = table.currentDefendId === HUMAN_ID;
+
+    // Logic: Decide if this is an attack or defense
+    if (isMyTurnToAttack || (!isMyTurnToDefend && table.attack.length > 0)) {
+        // Human wants to attack or throw in
+        intent$.next({
+            type: "ATTACK_INTENT",
+            playerId: HUMAN_ID,
+            cardId: card.id,
+            action: "ATTACK"
+        });
+    } else if (isMyTurnToDefend && table.attack.length > table.defense.length) {
+        // Human wants to defend
+        intent$.next({
+            type: "DEFENSE_INTENT",
+            playerId: HUMAN_ID,
+            cardId: card.id,
+            action: "DEFEND"
+        });
+    }
+};
+
+btnPass.addEventListener("click", () => {
+    intent$.next({
+        type: "BEATEN_INTENT",
+        playerId: HUMAN_ID,
+        action: "BEATEN"
+    });
+});
+
+btnTake.addEventListener("click", () => {
+    intent$.next({
+        type: "TAKE_INTENT",
+        playerId: HUMAN_ID,
+        action: "TAKE"
+    });
+});
+
 table$.subscribe({
     next: (table: any) => {
-        // Stats
+        // 1. Stats
         deckCount.textContent = table.deck.length.toString();
         trumpInfo.textContent = `${table.trumps.rank}${getSuitSymbol(table.trumps.suit)}`;
         
-        // Bout Area
+        // 2. Bout Area
         boutArea.innerHTML = "";
         table.attack.forEach((card: any, i: number) => {
             boutArea.appendChild(renderCard(card));
@@ -54,9 +104,9 @@ table$.subscribe({
             }
         });
 
-        // Player List
+        // 3. Bot Player List (Marie, Isaac, Nikola)
         playerList.innerHTML = "";
-        table.players.forEach((player: any) => {
+        table.players.filter(p => p.id !== HUMAN_ID).forEach((player: any) => {
             const playerBox = document.createElement("div");
             playerBox.className = `player-box ${table.currentTurnId === player.id ? "active" : ""} ${table.currentDefendId === player.id ? "defender" : ""}`;
             
@@ -68,6 +118,20 @@ table$.subscribe({
             `;
             playerList.appendChild(playerBox);
         });
+
+        // 4. Human Hand and Controls
+        const humanHand = table.hands.find((h: any) => h.playerId === HUMAN_ID)?.cards || [];
+        humanHandArea.innerHTML = "";
+        humanHand.forEach((card: any) => {
+            humanHandArea.appendChild(renderCard(card, () => onHumanCardClick(card)));
+        });
+
+        const isHumanActive = table.currentTurnId === HUMAN_ID || table.currentDefendId === HUMAN_ID;
+        humanControls.style.display = isHumanActive ? "block" : "none";
+        
+        // Disable buttons if not appropriate
+        (btnPass as HTMLButtonElement).disabled = table.currentTurnId !== HUMAN_ID || table.attack.length === 0;
+        (btnTake as HTMLButtonElement).disabled = table.currentDefendId !== HUMAN_ID || table.attack.length === 0;
     },
     complete: () => {
         logMessage("🏁 GAME OVER");

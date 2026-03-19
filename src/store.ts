@@ -74,15 +74,29 @@ intent$.subscribe((intent) => {
       log$.next(msg);
       
       if (intent.action === "ATTACK") {
+        // If not the first card, must match ranks on table
+        if (table.attack.length > 0 || table.defense.length > 0) {
+            const allRanks = [...table.attack, ...table.defense].map(c => c.rank);
+            if (!allRanks.includes(card.rank)) {
+                log$.next(`🚫 ${playerName}: ${card.rank}${card.suit[0]} is an invalid attack rank.`);
+                playerHand.cards.push(card);
+                table$.next(table);
+                return;
+            }
+        }
         table.attack = [...table.attack, card];
       } else if (intent.action === "DEFEND") {
         table.defense = [...table.defense, card];
       } else if (intent.action === "PASS") {
         table.attack = [...table.attack, card];
-        table.currentTurnId = table.currentDefendId;
+        const oldDefenderId = table.currentDefendId;
         table.currentDefendId = (table.currentDefendId + 1) % table.players.length;
-        const nextAttacker = table.players.find(p => p.id === table.currentTurnId)?.name;
-        log$.next(`↩️ ${playerName} passes turn to ${nextAttacker}`);
+        // The person who was the original attacker should probably stay attacker?
+        // Actually, in transfer, the person who transferred becomes an attacker.
+        table.currentTurnId = oldDefenderId; 
+        
+        const newDefender = table.players.find(p => p.id === table.currentDefendId)?.name;
+        log$.next(`🔄 ${playerName} transferred the attack to ${newDefender}`);
       }
       
       table$.next(table);

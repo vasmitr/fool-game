@@ -34,7 +34,7 @@ export function findBestDefense(
     return { action: "DEFEND", cardId: higherCard.id };
   }
 
-  if (sameRankCards.length > 0) {
+  if (sameRankCards.length > 0 && defenseCards.length === 0) {
     return { action: "PASS", cardId: sameRankCards[0].id };
   }
 

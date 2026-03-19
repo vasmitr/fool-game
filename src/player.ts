@@ -91,7 +91,7 @@ export const createPlayerBrain = (playerId: number) => {
   );
 };
 
-// Initialize brains for all players
-[0, 1, 2, 3].forEach((id) => {
+// Initialize brains for bots (Marie Curie, Isaac Newton, Nikola Tesla)
+[1, 2, 3].forEach((id) => {
   createPlayerBrain(id).subscribe(intent$ as any);
 });
