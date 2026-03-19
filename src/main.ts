@@ -10,6 +10,7 @@ const boutArea = document.getElementById("bout-area")!;
 const discardStack = document.getElementById("discard-stack")!;
 const discardCount = document.getElementById("discard-count")!;
 const gameLog = document.getElementById("game-log")!;
+const btnCopyLog = document.getElementById("btn-copy-log")!;
 const humanHandArea = document.getElementById("human-hand")!;
 const humanControls = document.getElementById("human-controls")!;
 const btnPass = document.getElementById("btn-pass")! as HTMLButtonElement;
@@ -80,10 +81,20 @@ const renderCardBack = (isNew = false) => {
 const logMessage = (msg: string) => {
     const div = document.createElement("div");
     div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-    gameLog.prepend(div);
+    gameLog.appendChild(div);
+    gameLog.scrollTop = gameLog.scrollHeight;
 }
 
 log$.subscribe((msg: string) => logMessage(msg));
+
+btnCopyLog.addEventListener("click", () => {
+    const text = Array.from(gameLog.children).map(c => c.textContent).join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+        const originalText = btnCopyLog.textContent;
+        btnCopyLog.textContent = "COPIED!";
+        setTimeout(() => btnCopyLog.textContent = originalText, 2000);
+    });
+});
 
 btnRestartMain.addEventListener("click", () => resetGame());
 btnRestartOverlay.addEventListener("click", () => {

@@ -224,21 +224,45 @@
         position: fixed;
         bottom: 20px;
         left: 20px;
-        width: 250px;
-        height: 150px;
-        background: rgba(0, 0, 0, 0.7);
+        width: 280px;
+        height: 180px;
+        background: rgba(0, 0, 0, 0.8);
         border-radius: 8px;
-        padding: 10px;
         font-family: monospace;
-        font-size: 0.7rem;
+        font-size: 0.75rem;
         color: #0f0;
-        overflow-y: auto;
-        opacity: 0.3;
+        opacity: 0.4;
         transition: opacity 0.3s;
-        pointer-events: none;
         z-index: 100;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid rgba(0, 255, 0, 0.1);
       }
-      .log-container:hover { opacity: 1; pointer-events: auto; }
+      .log-container:hover { opacity: 1; }
+      
+      .log-list {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 10px;
+        scrollbar-width: thin;
+        scrollbar-color: #0f0 transparent;
+      }
+      .copy-btn {
+        background: #0f3460;
+        color: #0f0;
+        border: 1px solid #0f0;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.6rem;
+        cursor: pointer;
+        align-self: flex-end;
+        margin: 5px 5px 0 0;
+        transition: all 0.2s;
+      }
+      .copy-btn:hover {
+        background: #0f0;
+        color: #000;
+      }
 
       .bout-pair {
         position: relative;
@@ -311,8 +335,11 @@
             </div>
         </div>
 
-        <div id="game-log" class="log-container">
-            <div>Game log started...</div>
+        <div class="log-container">
+            <button id="btn-copy-log" class="copy-btn">COPY LOG</button>
+            <div id="game-log" class="log-list">
+                <div>Game log started...</div>
+            </div>
         </div>
 
         <button id="btn-restart-main" style="position: fixed; top: 10px; right: 10px; background: transparent; border: 1px solid #e94560; color: #e94560; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; z-index: 10;">RESTART</button>
