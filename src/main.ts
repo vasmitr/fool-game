@@ -1,6 +1,7 @@
 import { table$, log$, intent$, resetGame } from "./store";
 import "./player";
 import { findBestDefense, findBestAttack } from "./helpers";
+import type { Intent } from "./rules";
 
 const deckCount = document.getElementById("deck-count")!;
 const trumpInfo = document.getElementById("trump-info")!;

@@ -1,11 +1,20 @@
 import { Card } from "./consts";
-import _ from "underscore";
+
+export interface Hand {
+  playerId: number;
+  cards: Card[];
+}
+
+export interface Player {
+  id: number;
+  name: string;
+}
 
 export interface TableState {
   deck: Card[];
   trumps: Card;
-  players: { id: number; name: string }[];
-  hands: { playerId: number; cards: Card[] }[];
+  players: Player[];
+  hands: Hand[];
   attack: Card[];
   defense: Card[];
   beaten: Card[];
@@ -15,92 +24,121 @@ export interface TableState {
   winner: string | null;
 }
 
-// 1. Pure Predicates
-export const isTrump = (trumps: Card) => (card: Card) => card.suit === trumps.suit;
-export const canBeatSameSuit = (attack: Card) => (defense: Card) => 
-  attack.suit === defense.suit && defense.value > attack.value;
+export type GameAction = "ATTACK" | "DEFEND" | "PASS" | "TAKE" | "BEATEN";
 
-export const canBeat = (trumps: Card) => (attack: Card) => (defense: Card) => 
-  canBeatSameSuit(attack)(defense) || (isTrump(trumps)(defense) && !isTrump(trumps)(attack));
+export interface Intent {
+  type?: string;
+  action: GameAction;
+  playerId: number;
+  cardId?: string;
+}
+
+export type ActionOutcome = 
+  | { type: 'SUCCESS', table: TableState, log: string }
+  | { type: 'ERROR', log: string }
+  | { type: 'GAME_OVER', winner: string };
+
+// --- HELPERS ---
 
 export const getTableRanks = (table: TableState) => 
-  _.uniq([...table.attack, ...table.defense].map(c => c.rank));
+  [...new Set([...table.attack, ...table.defense].map(c => c.rank))];
 
-export const isValidAttackRank = (table: TableState) => (card: Card) => 
-  table.attack.length === 0 || getTableRanks(table).includes(card.rank);
-
-export const canAttack = (table: TableState) => (playerId: number) => (card: Card) => 
-  (table.currentTurnId === playerId || table.currentDefendId !== playerId) && 
-  isValidAttackRank(table)(card) && 
-  table.attack.length < 6;
-
-export const canDefend = (table: TableState) => (playerId: number) => (card: Card) => {
-  if (table.currentDefendId !== playerId) return false;
-  const target = table.attack[table.defense.length];
-  return target ? canBeat(table.trumps)(target)(card) : false;
+const updateHand = (playerId: number, updater: (cards: Card[]) => Card[]) => (table: TableState): TableState => {
+  return {
+    ...table,
+    hands: table.hands.map(h => h.playerId === playerId ? { ...h, cards: updater(h.cards) } : h)
+  };
 };
-
-export const canEndBout = (table: TableState) => 
-  table.attack.length > 0 && table.attack.length === table.defense.length;
-
-// 2. Pure State Modifiers (Transformations)
-const updateHand = (playerId: number, updater: (cards: Card[]) => Card[]) => (table: TableState): TableState => ({
-  ...table,
-  hands: table.hands.map(h => h.playerId === playerId ? { ...h, cards: updater(h.cards) } : h)
-});
 
 const refillPlayerHand = (deck: Card[], hand: Card[]): { deck: Card[], hand: Card[] } => {
-  if (hand.length >= 6 || deck.length === 0) return { deck, hand };
-  const [card, ...rest] = deck;
-  return refillPlayerHand(rest, [...hand, card]);
-};
-
-const refillHands = (table: TableState): TableState => {
-  // Ordered player indices starting from attacker
-  const playerOrder = _.range(table.players.length)
-    .map(i => (table.currentTurnId + i) % table.players.length);
-
-  const initialAcc = { deck: [...table.deck].reverse(), hands: table.hands };
+  const needed = Math.max(0, 6 - hand.length);
+  if (needed === 0 || deck.length === 0) return { deck, hand };
   
-  const result = playerOrder.reduce((acc, idx) => {
-    const playerId = table.players[idx].id;
-    const playerHand = acc.hands.find(h => h.playerId === playerId)?.cards || [];
-    
-    const { deck: newDeck, hand: newHand } = refillPlayerHand(acc.deck, playerHand);
-    
-    return {
-      deck: newDeck,
-      hands: acc.hands.map(h => h.playerId === playerId ? { ...h, cards: newHand } : h)
-    };
-  }, initialAcc);
-
-  return { ...table, deck: result.deck.reverse(), hands: result.hands };
+  const draw = deck.slice(0, needed);
+  const remaining = deck.slice(needed);
+  return { deck: remaining, hand: [...hand, ...draw] };
 };
 
-// 3. Action Handlers (High-level pure transforms)
-export type ActionOutcome = 
-  | { type: 'SUCCESS'; table: TableState; log: string }
-  | { type: 'ERROR'; log: string }
-  | { type: 'GAME_OVER'; winner: string };
+const refillHands = (table: TableState, startingPlayerId: number): TableState => {
+  // Ordered player ids starting from startingPlayerId
+  const startIndex = table.players.findIndex(p => p.id === startingPlayerId);
+  const playerOrderIds = Array.from({ length: table.players.length }, (_, i) => {
+      const idx = (startIndex + i) % table.players.length;
+      return table.players[idx].id;
+  });
+
+  let currentDeck = [...table.deck].reverse(); // Draw from "top" (end of deck array)
+  let currentHands = [...table.hands];
+
+  for (const pid of playerOrderIds) {
+    const hIdx = currentHands.findIndex(h => h.playerId === pid);
+    const { deck, hand } = refillPlayerHand(currentDeck, currentHands[hIdx].cards);
+    currentDeck = deck;
+    currentHands[hIdx] = { ...currentHands[hIdx], cards: hand };
+  }
+
+  return { ...table, deck: currentDeck.reverse(), hands: currentHands };
+};
+
+const canEndBout = (table: TableState) => 
+  table.attack.length > 0 && table.attack.length === table.defense.length;
+
+// --- HANDLERS ---
 
 const handleAttack = (table: TableState, playerId: number, cardId: string): ActionOutcome => {
   const playerHand = table.hands.find(h => h.playerId === playerId);
   const card = playerHand?.cards.find(c => c.id === cardId);
-  if (!card || !canAttack(table)(playerId)(card)) return { type: 'ERROR', log: '🚫 Invalid attack.' };
 
-  const log = `⚔️ ${table.players.find(p => p.id === playerId)?.name} plays ${card.rank}${card.suit[0]} (ATTACK)`;
-  const postAttack = updateHand(playerId, cards => cards.filter(c => c.id !== cardId))(table);
-  return { type: 'SUCCESS', table: { ...postAttack, attack: [...postAttack.attack, card] }, log };
+  // First attacker or someone else adding cards
+  const isCurrentAttacker = table.currentTurnId === playerId;
+  const isParticipant = table.hands.some(h => h.playerId === playerId);
+  const isAllowedToAdd = table.attack.length > 0 && isParticipant && playerId !== table.currentDefendId;
+
+  if (!isCurrentAttacker && !isAllowedToAdd) return { type: 'ERROR', log: '🚫 Not your turn to attack.' };
+  if (!card) return { type: 'ERROR', log: '🚫 Card not found.' };
+
+  const validRanks = getTableRanks(table);
+  if (table.attack.length > 0 && !validRanks.includes(card.rank)) return { type: 'ERROR', log: '🚫 Invalid rank for attack.' };
+
+  const nextTable = updateHand(playerId, cards => cards.filter(c => c.id !== cardId))({
+      ...table,
+      attack: [...table.attack, card]
+  });
+
+  return { 
+    type: 'SUCCESS', 
+    table: nextTable, 
+    log: `⚔️ ${table.players.find(p => p.id === playerId)?.name} plays ${card.rank}${card.suit[0]} (ATTACK)` 
+  };
 };
 
 const handleDefend = (table: TableState, playerId: number, cardId: string): ActionOutcome => {
+  if (table.currentDefendId !== playerId) return { type: 'ERROR', log: '🚫 Not your turn to defend.' };
+  
   const playerHand = table.hands.find(h => h.playerId === playerId);
   const card = playerHand?.cards.find(c => c.id === cardId);
-  if (!card || !canDefend(table)(playerId)(card)) return { type: 'ERROR', log: '🚫 Cannot beat the card.' };
+  if (!card) return { type: 'ERROR', log: '🚫 Card not found.' };
 
-  const log = `🛡️ ${table.players.find(p => p.id === playerId)?.name} plays ${card.rank}${card.suit[0]} (DEFEND)`;
-  const postDefend = updateHand(playerId, cards => cards.filter(c => c.id !== cardId))(table);
-  return { type: 'SUCCESS', table: { ...postDefend, defense: [...postDefend.defense, card] }, log };
+  const target = table.attack[table.defense.length];
+  if (!target) return { type: 'ERROR', log: '🚫 No card to beat.' };
+
+  const isTrump = card.suit === table.trumps.suit;
+  const sameSuit = card.suit === target.suit;
+  const beatsByValue = sameSuit && card.value > target.value;
+  const beatsByTrump = isTrump && target.suit !== table.trumps.suit;
+
+  if (!beatsByValue && !beatsByTrump) return { type: 'ERROR', log: '🚫 Cannot beat the card.' };
+
+  const nextTable = updateHand(playerId, cards => cards.filter(c => c.id !== cardId))({
+      ...table,
+      defense: [...table.defense, card]
+  });
+
+  return { 
+    type: 'SUCCESS', 
+    table: nextTable, 
+    log: `🛡️ ${table.players.find(p => p.id === playerId)?.name} plays ${card.rank}${card.suit[0]} (DEFEND)` 
+  };
 };
 
 const handlePass = (table: TableState, playerId: number, cardId: string): ActionOutcome => {
@@ -110,57 +148,72 @@ const handlePass = (table: TableState, playerId: number, cardId: string): Action
   const card = playerHand?.cards.find(c => c.id === cardId);
   const allRanks = getTableRanks(table);
   
-  if (!card || table.defense.length > 0 || !allRanks.includes(card.rank)) return { type: 'ERROR', log: '🚫 Cannot transfer.' };
+  if (!card || table.defense.length > 0 || !allRanks.includes(card.rank)) {
+      return { type: 'ERROR', log: '🚫 Cannot transfer.' };
+  }
 
   const nextDefendId = (table.currentDefendId + 1) % table.players.length;
   const postPass = updateHand(playerId, cards => cards.filter(c => c.id !== cardId))(table);
+  
   return { 
     type: 'SUCCESS', 
-    table: { ...postPass, attack: [...postPass.attack, card], currentDefendId: nextDefendId, currentTurnId: table.currentDefendId }, 
-    log: `🔄 ${table.players.find(p => p.id === playerId)?.name} transferred to ${table.players.find(p => p.id === nextDefendId)?.name}` 
+    table: { ...postPass, attack: [...postPass.attack, card], currentDefendId: nextDefendId, currentTurnId: playerId }, 
+    log: `🔄 ${table.players.find(p => p.id === playerId)?.name} transfers the bout.` 
   };
 };
 
 const handleTake = (table: TableState, playerId: number): ActionOutcome => {
-  if (table.currentDefendId !== playerId) return { type: 'ERROR', log: 'Not your turn to take' };
+  if (table.currentDefendId !== playerId) return { type: 'ERROR', log: '🚫 Only defender can take cards.' };
   
-  const postTake = updateHand(playerId, cards => [...cards, ...table.attack, ...table.defense])(table);
+  const allCards = [...table.attack, ...table.defense];
+  const postTake = updateHand(playerId, cards => [...cards, ...allCards])(table);
   const nextAttacker = (table.currentDefendId + 1) % table.players.length;
+  
   const nextState = refillHands({ 
     ...postTake, attack: [], defense: [], currentTurnId: nextAttacker, currentDefendId: (nextAttacker + 1) % table.players.length 
-  });
+  }, table.currentTurnId);
+  
   return { type: 'SUCCESS', table: nextState, log: `📥 ${table.players.find(p => p.id === playerId)?.name} takes all cards.` };
 };
 
 const handleBeaten = (table: TableState, playerId: number): ActionOutcome => {
-  const isParticipant = table.currentTurnId === playerId || table.currentDefendId === playerId;
+  const isParticipant = table.currentTurnId === playerId || table.currentDefendId === playerId || table.attack.length > 0;
   if (!isParticipant || !canEndBout(table)) return { type: 'ERROR', log: 'Cannot end bout' };
   
+  const nextAttacker = table.currentDefendId;
   const nextState = refillHands({
     ...table,
     beaten: [...table.beaten, ...table.attack, ...table.defense],
     attack: [],
     defense: [],
-    currentTurnId: table.currentDefendId,
-    currentDefendId: (table.currentDefendId + 1) % table.players.length
-  });
+    currentTurnId: nextAttacker,
+    currentDefendId: (nextAttacker + 1) % table.players.length
+  }, table.currentTurnId);
+
   return { type: 'SUCCESS', table: nextState, log: `✅ ${table.players.find(p => p.id === playerId)?.name} closed the bout.` };
 };
 
-// 4. Main Entry (Reducer-like)
-export function processIntent(table: TableState, intent: any): ActionOutcome {
-  if (table.deck.length === 0 && table.hands.some(h => h.cards.length === 0)) {
-    const winner = table.hands.find(h => h.cards.length === 0);
-    const winnerName = table.players.find(p => p.id === winner?.playerId)?.name || "Unknown";
-    return { type: 'GAME_OVER', winner: winnerName };
-  }
+export function processIntent(table: TableState, intent: Intent): ActionOutcome {
+  const clone: TableState = JSON.parse(JSON.stringify(table));
+  let result: ActionOutcome;
 
   switch (intent.action) {
-    case "ATTACK": return handleAttack(table, intent.playerId, intent.cardId);
-    case "DEFEND": return handleDefend(table, intent.playerId, intent.cardId);
-    case "PASS": return handlePass(table, intent.playerId, intent.cardId);
-    case "TAKE": return handleTake(table, intent.playerId);
-    case "BEATEN": return handleBeaten(table, intent.playerId);
-    default: return { type: 'ERROR', log: 'Unknown action' };
+    case "ATTACK": result = handleAttack(clone, intent.playerId, intent.cardId || ""); break;
+    case "DEFEND": result = handleDefend(clone, intent.playerId, intent.cardId || ""); break;
+    case "PASS": result = handlePass(clone, intent.playerId, intent.cardId || ""); break;
+    case "TAKE": result = handleTake(clone, intent.playerId); break;
+    case "BEATEN": result = handleBeaten(clone, intent.playerId); break;
+    default: result = { type: 'ERROR', log: 'Unknown action' };
   }
+
+  if (result.type === 'SUCCESS') {
+    const nextTable = result.table;
+    if (nextTable.deck.length === 0 && nextTable.hands.some(h => h.cards.length === 0)) {
+        const winner = nextTable.hands.find(h => h.cards.length === 0);
+        const winnerName = nextTable.players.find(p => p.id === winner?.playerId)?.name || "Unknown";
+        return { type: 'GAME_OVER', winner: winnerName };
+    }
+  }
+
+  return result;
 }

@@ -1,8 +1,9 @@
 import { BehaviorSubject, Subject } from "rxjs";
 import { getDeck } from "./helpers";
 import type { Card } from "./consts";
+import type { Intent, TableState } from "./rules";
 
-function getInitialState() {
+function getInitialState(): TableState {
   const initialDeck = getDeck();
   const hands = [0, 1, 2, 3].map((id) => ({
     playerId: id,
@@ -29,8 +30,8 @@ function getInitialState() {
   };
 }
 
-export const table$ = new BehaviorSubject(getInitialState());
-export const intent$ = new Subject<any>();
+export const table$ = new BehaviorSubject<TableState>(getInitialState());
+export const intent$ = new Subject<Intent>();
 export const log$ = new Subject<string>();
 
 export function resetGame() {
@@ -44,11 +45,11 @@ intent$.subscribe((intent) => {
   const table = table$.value;
   if (table.isGameOver) return; // Ignore inputs after game over
 
-  const outcome = rules.processIntent(table as any, intent);
+  const outcome = rules.processIntent(table, intent);
 
   if (outcome.type === 'GAME_OVER') {
       log$.next(`🏆 GAME OVER! ${outcome.winner} Wins!`);
-      const nextTable = JSON.parse(JSON.stringify(table));
+      const nextTable = structuredClone(table);
       nextTable.isGameOver = true;
       nextTable.winner = outcome.winner;
       table$.next(nextTable);

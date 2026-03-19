@@ -26,3 +26,5 @@ export interface Player {
   hand: Card[];
   isDealer: boolean;
 }
+
+export const AI_DELAY_MS = 3000;

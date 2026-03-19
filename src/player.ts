@@ -1,8 +1,7 @@
 import { table$, intent$ } from "./store";
 import { findBestDefense, findBestAttack } from "./helpers";
 import { map, distinctUntilChanged, mergeMap, of, EMPTY, observeOn, asyncScheduler, delay } from "rxjs";
-
-const AI_DELAY_MS = 3000;
+import { AI_DELAY_MS } from "./consts";
 
 export const createPlayerBrain = (playerId: number) => {
   return table$.pipe(

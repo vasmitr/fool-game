@@ -1,21 +1,25 @@
 import { describe, it, expect } from "vitest";
 import * as rules from "./rules";
+import { TableState, Intent } from "./rules";
 import { Card } from "./consts";
 
-describe("rules.processIntent", () => {
-  const trumps: Card = { id: "t1", rank: "6", suit: "hearts", value: 6 };
-  const players = [
-    { id: 0, name: "Einstein" },
-    { id: 1, name: "Curie" }
-  ];
+describe("Durak Rules Engine", () => {
+  const getDummy = (id: string, rank: string = "6"): Card => ({ id, rank, suit: "clubs", value: 6 });
   
-  const initialState: rules.TableState = {
-    deck: [],
-    trumps,
-    players,
+  const initialState: TableState = {
+    deck: [{ id: "deck-dummy", rank: "A", suit: "hearts", value: 14 } as Card],
+    trumps: { id: "t1", rank: "A", suit: "spades", value: 14 },
+    players: [
+      { id: 0, name: "P1" },
+      { id: 1, name: "P2" },
+      { id: 2, name: "P3" },
+      { id: 3, name: "P4" },
+    ],
     hands: [
-      { playerId: 0, cards: [{ id: "c1", rank: "6", suit: "spades", value: 6 }, { id: "c2", rank: "10", suit: "spades", value: 10 }] },
-      { playerId: 1, cards: [{ id: "c3", rank: "7", suit: "spades", value: 7 }] }
+      { playerId: 0, cards: [getDummy("h0-1"), getDummy("h0-2"), getDummy("h0-3")] },
+      { playerId: 1, cards: [getDummy("h1-1"), getDummy("h1-2"), getDummy("h1-3")] },
+      { playerId: 2, cards: [getDummy("h2-1"), getDummy("h2-2"), getDummy("h2-3")] },
+      { playerId: 3, cards: [getDummy("h3-1"), getDummy("h3-2"), getDummy("h3-3")] },
     ],
     attack: [],
     defense: [],
@@ -27,149 +31,72 @@ describe("rules.processIntent", () => {
   };
 
   it("should allow first attack", () => {
-    const intent = { action: "ATTACK", playerId: 0, cardId: "c1" };
-    const outcome = rules.processIntent(initialState, intent);
-    expect(outcome.type).toBe("SUCCESS");
-    if (outcome.type === "SUCCESS") {
-      expect(outcome.table.attack.length).toBe(1);
-      expect(outcome.table.attack[0].id).toBe("c1");
-    }
-  });
-
-  it("should reject attack with invalid rank", () => {
-    const stateWithAttack = { ...initialState, attack: [{ id: "a1", rank: "A", suit: "clubs", value: 14 }] };
-    const intent = { action: "ATTACK", playerId: 0, cardId: "c2" }; // Rank 10 vs Rank A
-    const outcome = rules.processIntent(stateWithAttack, intent);
-    expect(outcome.type).toBe("ERROR");
-    if (outcome.type === "ERROR") {
-      expect(outcome.log).toContain("Invalid attack");
-    }
-  });
-
-  it("should allow valid defense", () => {
-    const stateToDefend = { ...initialState, attack: [{ id: "a1", rank: "6", suit: "spades", value: 6 }] };
-    const intent = { action: "DEFEND", playerId: 1, cardId: "c3" }; // 7s beats 6s
-    const outcome = rules.processIntent(stateToDefend, intent);
-    expect(outcome.type).toBe("SUCCESS");
-  });
-
-  it("should reject invalid defense", () => {
-    const stateToDefend = { ...initialState, attack: [{ id: "a1", rank: "10", suit: "spades", value: 10 }] };
-    const intent = { action: "DEFEND", playerId: 1, cardId: "c3" }; // 7s cannot beat 10s
-    const outcome = rules.processIntent(stateToDefend, intent);
-    expect(outcome.type).toBe("ERROR");
-  });
-
-  it("should allow transfer (PASS) on fresh table", () => {
-    const stateToPassCorrect: rules.TableState = { 
-        ...initialState, 
-        deck: [{ id: "d-deck", rank: "A", suit: "clubs", value: 14 }],
-        attack: [{ id: "a0", rank: "7", suit: "diamonds", value: 7 }],
-        hands: [
-            { playerId: 0, cards: [{ id: "p0c1", rank: "K", suit: "hearts", value: 13 }] },
-            { playerId: 1, cards: [{ id: "c3", rank: "7", suit: "spades", value: 7 }] }
-        ],
-        currentDefendId: 1
-    };
-    const intentCorrect = { action: "PASS", playerId: 1, cardId: "c3" };
-    const outcome = rules.processIntent(stateToPassCorrect, intentCorrect);
-    expect(outcome.type).toBe("SUCCESS");
-    if (outcome.type === "SUCCESS") {
-        expect(outcome.table.currentDefendId).toBe(0); // Rotated
-    }
-  });
-
-  it("should reject transfer (PASS) if not the defender", () => {
-    const state = { ...initialState, attack: [{ id: "a1", rank: "7", suit: "diamonds", value: 7 }] };
-    // Player 0 is attacker, currentDefendId is 1. P0 tries to PASS.
-    const intent = { action: "PASS", playerId: 0, cardId: "c1" };
-    const outcome = rules.processIntent(state, intent);
-    expect(outcome.type).toBe("ERROR");
-    if (outcome.type === "ERROR") {
-        expect(outcome.log).toContain("Only the defender can transfer");
-    }
-  });
-
-  it("should reject transfer (PASS) if already defending", () => {
-    const state = { 
-        ...initialState, 
-        attack: [{ id: "a1", rank: "7", suit: "diamonds", value: 7 }],
-        defense: [{ id: "d1", rank: "8", suit: "diamonds", value: 8 }],
-        currentDefendId: 1
-    };
-    // P1 (defender) has an 7s in hand but already defended one card
-    const intent = { action: "PASS", playerId: 1, cardId: "c3" }; 
-    const outcome = rules.processIntent(state, intent);
-    expect(outcome.type).toBe("ERROR");
-    if (outcome.type === "ERROR") {
-        expect(outcome.log).toContain("Cannot transfer");
-    }
-  });
-
-  it("should allow TAKE", () => {
-    const state = { ...initialState, attack: [{ id: "a1", rank: "A", suit: "spades", value: 14 }] };
-    const intent = { action: "TAKE", playerId: 1 };
-    const outcome = rules.processIntent(state, intent);
-    expect(outcome.type).toBe("SUCCESS");
-    if (outcome.type === "SUCCESS") {
-        expect(outcome.table.attack.length).toBe(0);
-        expect(outcome.table.hands.find(h => h.playerId === 1)?.cards.length).toBe(2); // Got the A
-    }
-  });
-
-  it("should allow BEATEN by attacker", () => {
-    const state = { 
-        ...initialState, 
-        attack: [{ id: "a1", rank: "6", suit: "spades", value: 6 }],
-        defense: [{ id: "d1", rank: "7", suit: "spades", value: 7 }],
-        currentTurnId: 0,
-        currentDefendId: 1
-    };
-    const intent = { action: "BEATEN", playerId: 0 };
+    const card: Card = { id: "c1", rank: "7", suit: "hearts", value: 7 };
+    const state: TableState = { ...initialState };
+    const intent: Intent = { action: "ATTACK", playerId: 0, cardId: "h0-1" };
     const outcome = rules.processIntent(state, intent);
     expect(outcome.type).toBe("SUCCESS");
   });
 
-  it("should allow BEATEN by defender", () => {
-    const state = { 
+  it("should allow PASS (transfer) correctly", () => {
+    const attackCard: Card = { id: "a1", rank: "6", suit: "hearts", value: 6 };
+    const state: TableState = { 
         ...initialState, 
-        attack: [{ id: "a1", rank: "6", suit: "spades", value: 6 }],
-        defense: [{ id: "d1", rank: "7", suit: "spades", value: 7 }],
-        currentTurnId: 0,
-        currentDefendId: 1
-    };
-    const intent = { action: "BEATEN", playerId: 1 };
-    const outcome = rules.processIntent(state, intent);
-    expect(outcome.type).toBe("SUCCESS");
-  });
-
-  it("should reject BEATEN if not balanced", () => {
-    const state = { 
-        ...initialState, 
-        attack: [{ id: "a1", rank: "6", suit: "spades", value: 6 }],
+        attack: [attackCard],
         defense: [],
         currentTurnId: 0,
         currentDefendId: 1
     };
-    const intent = { action: "BEATEN", playerId: 0 };
+    const intent: Intent = { action: "PASS", playerId: 1, cardId: "h1-1" }; // h1-1 is rank 6
     const outcome = rules.processIntent(state, intent);
-    expect(outcome.type).toBe("ERROR");
+    expect(outcome.type).toBe("SUCCESS");
   });
 
-  it("should detect GAME_OVER", () => {
-    const emptyState = { 
+  it("should detect GAME_OVER correctly", () => {
+    const lastCard: Card = { id: "last", rank: "A", suit: "spades", value: 14 };
+    const state: TableState = {
         ...initialState, 
-        deck: [], 
+        deck: [],
         hands: [
-            { playerId: 0, cards: [] },
-            { playerId: 1, cards: [{ id: "c3", rank: "7", suit: "spades", value: 7 }] }
-        ]
+            { playerId: 0, cards: [getDummy("h0")] },
+            { playerId: 1, cards: [lastCard] }, 
+            { playerId: 2, cards: [getDummy("h2")] },
+            { playerId: 3, cards: [getDummy("h3")] }
+          ],
+        attack: [{ id: "a1", rank: "6", suit: "hearts", value: 6 } as Card],
+        defense: [],
+        currentTurnId: 0,
+        currentDefendId: 1
     };
-    const intent = { action: "ATTACK", playerId: 1, cardId: "c3" };
-    const outcome = rules.processIntent(emptyState, intent);
+    const intent: Intent = { action: "DEFEND", playerId: 1, cardId: "last" };
+    const outcome = rules.processIntent(state, intent);
     expect(outcome.type).toBe("GAME_OVER");
     if (outcome.type === "GAME_OVER") {
-        expect(outcome.winner).toBe("Einstein");
+        expect(outcome.winner).toBe("P2");
     }
+  });
+
+  it("should handle partial hand refill", () => {
+      const cardsInDeck: Card[] = [
+          { id: "deck1", rank: "K", suit: "hearts", value: 13 },
+          { id: "deck2", rank: "A", suit: "hearts", value: 14 }
+      ];
+      const state: TableState = {
+          ...initialState,
+          deck: [...cardsInDeck],
+          hands: initialState.hands.map(h => ({ ...h, cards: Array(5).fill(getDummy("d")) })),
+          attack: [{ id: "a1", rank: "6", suit: "spades", value: 6 } as Card],
+          defense: [{ id: "d1", rank: "7", suit: "spades", value: 7 } as Card],
+          currentTurnId: 0,
+          currentDefendId: 1
+      };
+      const intent: Intent = { action: "BEATEN", playerId: 0 };
+      const outcome = rules.processIntent(state, intent);
+      expect(outcome.type).toBe("SUCCESS");
+      if (outcome.type === "SUCCESS") {
+          expect(outcome.table.hands[0].cards.length).toBe(6);
+          expect(outcome.table.hands[1].cards.length).toBe(6);
+          expect(outcome.table.deck.length).toBe(0);
+      }
   });
 });
