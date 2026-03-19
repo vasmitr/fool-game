@@ -1,6 +1,6 @@
 import { table$, intent$ } from "./store";
 import { findBestDefense, findBestAttack } from "./helpers";
-import { map, distinctUntilChanged, mergeMap, of, EMPTY, observeOn, asyncScheduler } from "rxjs";
+import { map, distinctUntilChanged, mergeMap, of, EMPTY, observeOn, asyncScheduler, delay } from "rxjs";
 
 export const createPlayerBrain = (playerId: number) => {
   return table$.pipe(
@@ -50,7 +50,14 @@ export const createPlayerBrain = (playerId: number) => {
             playerId: playerId,
             cardId: suggestion.cardId,
             action: suggestion.action,
-          });
+          }).pipe(delay(1000));
+        } else if (context.isMyTurnToAttack && context.attack.length > 0) {
+          // Attacker gives up -> Beaten
+          return of({
+            type: "BEATEN_INTENT",
+            playerId: playerId,
+            action: "BEATEN",
+          }).pipe(delay(1000));
         }
       }
 
@@ -62,13 +69,20 @@ export const createPlayerBrain = (playerId: number) => {
           context.defense,
           context.trumps,
         );
-        if (suggestion) {
+        if (suggestion && suggestion.action !== "TAKE") {
           return of({
             type: "DEFENSE_INTENT",
             playerId: playerId,
             cardId: suggestion.cardId,
-            action: suggestion.action,
-          });
+            action: suggestion.action === "PASS" ? "PASS" : "DEFEND",
+          }).pipe(delay(1000));
+        } else if (suggestion && suggestion.action === "TAKE") {
+          // Defender takes
+          return of({
+             type: "TAKE_INTENT",
+             playerId: playerId,
+             action: "TAKE"
+          }).pipe(delay(1000));
         }
       }
       // If nothing to do, return an "Empty" observable
@@ -79,5 +93,5 @@ export const createPlayerBrain = (playerId: number) => {
 
 // Initialize brains for all players
 [0, 1, 2, 3].forEach((id) => {
-  createPlayerBrain(id).subscribe(intent$);
+  createPlayerBrain(id).subscribe(intent$ as any);
 });

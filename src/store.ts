@@ -14,10 +14,10 @@ export const table$ = new BehaviorSubject({
   deck: initialDeck as Card[],
   trumps: initialDeck[initialDeck.length - 1], // Last card is trumps
   players: [
-    { id: 0, name: "Player 1" },
-    { id: 1, name: "Player 2" },
-    { id: 2, name: "Player 3" },
-    { id: 3, name: "Player 4" },
+    { id: 0, name: "Albert Einstein" },
+    { id: 1, name: "Marie Curie" },
+    { id: 2, name: "Isaac Newton" },
+    { id: 3, name: "Nikola Tesla" },
   ],
   hands: initialHands,
   attack: [] as Card[],
@@ -32,6 +32,9 @@ export const intent$ = new Subject<{
   action?: string;
 }>();
 
+// A stream for game events (logs)
+export const log$ = new Subject<string>();
+
 // A separate stream for active suggestions from all players
 export const suggestion$ = new BehaviorSubject<{
   [playerId: number]: { action: string; cardId: string };
@@ -45,12 +48,15 @@ intent$.subscribe((intent) => {
   if (table.deck.length === 0 && table.hands.some(h => h.cards.length === 0)) {
      const winner = table.hands.find(h => h.cards.length === 0);
      if (winner) {
-        console.log(`--- GAME OVER! Player ${winner.playerId} Wins! ---`);
+        const winnerName = table.players.find(p => p.id === winner.playerId)?.name || `Player ${winner.playerId}`;
+        log$.next(`🏆 GAME OVER! ${winnerName} Wins!`);
         table$.complete();
         return;
      }
   }
 
+  const playerInfo = table.players.find(p => p.id === intent.playerId);
+  const playerName = playerInfo?.name || `P${intent.playerId}`;
   const playerHand = table.hands.find((h) => h.playerId === intent.playerId);
   if (!playerHand) return;
 
@@ -63,7 +69,9 @@ intent$.subscribe((intent) => {
       }
 
       const [card] = playerHand.cards.splice(cardIndex, 1);
-      console.log(`[ACTION] Player ${intent.playerId} plays ${card.rank}${card.suit[0]} (${intent.action})`);
+      const msg = `⚔️ ${playerName} plays ${card.rank}${card.suit[0]} (${intent.action})`;
+      console.log(`[ACTION] ${msg}`);
+      log$.next(msg);
       
       if (intent.action === "ATTACK") {
         table.attack = [...table.attack, card];
@@ -73,6 +81,8 @@ intent$.subscribe((intent) => {
         table.attack = [...table.attack, card];
         table.currentTurnId = table.currentDefendId;
         table.currentDefendId = (table.currentDefendId + 1) % table.players.length;
+        const nextAttacker = table.players.find(p => p.id === table.currentTurnId)?.name;
+        log$.next(`↩️ ${playerName} passes turn to ${nextAttacker}`);
       }
       
       table$.next(table);
@@ -82,7 +92,7 @@ intent$.subscribe((intent) => {
 
   // 3. Handle TAKE
   if (intent.action === "TAKE" && intent.playerId === table.currentDefendId) {
-    console.log(`[ACTION] Player ${intent.playerId} TAKES the table`);
+    log$.next(`📥 ${playerName} takes all cards (${table.attack.length + table.defense.length})`);
     const allBoutCards = [...table.attack, ...table.defense];
     playerHand.cards.push(...allBoutCards);
 
@@ -101,11 +111,9 @@ intent$.subscribe((intent) => {
     return;
   }
 
-  // 4. Handle End of Bout (if everything defended and no one else wants to throw)
-  // To keep it autonomous, we'll auto-beat if all cards are defended
-  // (In a real game, this would wait for everyone to say "Pass")
-  if (table.attack.length > 0 && table.attack.length === table.defense.length) {
-     console.log(`[ACTION] Bout is successful. Moving to discard.`);
+  // 4. Handle End of Bout
+  if (intent.action === "BEATEN" && table.attack.length > 0 && table.attack.length === table.defense.length) {
+     log$.next(`✅ ${playerName} closed the bout. Cards moved to discard.`);
      const refilled = refillHands(table.hands, table.deck);
      table$.next({
        ...table,
