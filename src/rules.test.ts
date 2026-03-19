@@ -21,7 +21,9 @@ describe("rules.processIntent", () => {
     defense: [],
     beaten: [],
     currentTurnId: 0,
-    currentDefendId: 1
+    currentDefendId: 1,
+    isGameOver: false,
+    winner: null
   };
 
   it("should allow first attack", () => {

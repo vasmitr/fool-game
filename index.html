@@ -100,11 +100,47 @@
         font-size: 0.8rem;
         border-radius: 4px;
       }
+      #human-hand.active-turn {
+        border: 2px solid #e94560;
+        box-shadow: 0 0 15px rgba(233, 69, 96, 0.4);
+      }
+      .overlay {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.85);
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+      }
+      .overlay h2 { font-size: 3rem; color: #e94560; margin-bottom: 20px; }
+      .btn-primary {
+          background: #e94560;
+          color: white;
+          border: none;
+          padding: 15px 30px;
+          border-radius: 8px;
+          cursor: pointer;
+          font-weight: bold;
+          font-size: 1.1rem;
+          transition: transform 0.2s;
+      }
+      .btn-primary:hover { transform: scale(1.05); }
     </style>
   </head>
   <body>
+    <div id="game-over-overlay" class="overlay">
+        <h2 id="winner-text">GAME OVER</h2>
+        <button id="btn-restart-overlay" class="btn-primary">PLAY AGAIN</button>
+    </div>
+
     <div class="container">
-      <h1>Durak</h1>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1>Durak</h1>
+        <button id="btn-restart-main" style="background: transparent; border: 1px solid #e94560; color: #e94560; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">RESTART</button>
+      </div>
+
       <div class="stats" id="game-stats">
         <div>Deck: <span id="deck-count">0</span></div>
         <div>Trumps: <span id="trump-info">?</span></div>

@@ -1,4 +1,4 @@
-import { table$, log$, intent$ } from "./store";
+import { table$, log$, intent$, resetGame } from "./store";
 import "./player";
 import { findBestDefense, findBestAttack } from "./helpers";
 
@@ -11,6 +11,10 @@ const humanHandArea = document.getElementById("human-hand")!;
 const humanControls = document.getElementById("human-controls")!;
 const btnPass = document.getElementById("btn-pass")!;
 const btnTake = document.getElementById("btn-take")!;
+const btnRestartMain = document.getElementById("btn-restart-main")!;
+const btnRestartOverlay = document.getElementById("btn-restart-overlay")!;
+const gameOverOverlay = document.getElementById("game-over-overlay")!;
+const winnerText = document.getElementById("winner-text")!;
 
 const HUMAN_ID = 0;
 
@@ -41,11 +45,18 @@ const logMessage = (msg: string) => {
     gameLog.prepend(div);
 }
 
-log$.subscribe(msg => logMessage(msg));
+log$.subscribe((msg: string) => logMessage(msg));
+
+btnRestartMain.addEventListener("click", () => resetGame());
+btnRestartOverlay.addEventListener("click", () => {
+    gameOverOverlay.style.display = "none";
+    resetGame();
+});
 
 // Handle human clicks
 const onHumanCardClick = (card: any) => {
     const table = table$.value;
+    if (table.isGameOver) return;
     const isMyTurnToAttack = table.currentTurnId === HUMAN_ID;
     const isMyTurnToDefend = table.currentDefendId === HUMAN_ID;
 
@@ -80,6 +91,12 @@ btnTake.addEventListener("click", () => {
 
 table$.subscribe({
     next: (table: any) => {
+        // 0. Game Over Status
+        if (table.isGameOver) {
+            gameOverOverlay.style.display = "flex";
+            winnerText.textContent = `${table.winner} WINS!`;
+        }
+
         // 1. Stats
         deckCount.textContent = table.deck.length.toString();
         trumpInfo.textContent = `${table.trumps.rank}${getSuitSymbol(table.trumps.suit)}`;
@@ -122,6 +139,12 @@ table$.subscribe({
         const isHumanActive = table.currentTurnId === HUMAN_ID || table.currentDefendId === HUMAN_ID;
         humanControls.style.display = isHumanActive ? "block" : "none";
         
+        if (isHumanActive) {
+            humanHandArea.classList.add("active-turn");
+        } else {
+            humanHandArea.classList.remove("active-turn");
+        }
+
         // Disable buttons if not appropriate
         const isParticipant = table.currentTurnId === HUMAN_ID || table.currentDefendId === HUMAN_ID;
         (btnPass as HTMLButtonElement).disabled = !isParticipant || table.attack.length === 0;

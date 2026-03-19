@@ -1,56 +1,57 @@
 import { BehaviorSubject, Subject } from "rxjs";
-import { getDeck, refillHands } from "./helpers";
+import { getDeck } from "./helpers";
 import type { Card } from "./consts";
 
-const initialDeck = getDeck();
-const initialHands = [0, 1, 2, 3].map((id) => ({
-  playerId: id,
-  cards: initialDeck.splice(0, 6),
-}));
+function getInitialState() {
+  const initialDeck = getDeck();
+  const hands = [0, 1, 2, 3].map((id) => ({
+    playerId: id,
+    cards: initialDeck.splice(0, 6) as Card[],
+  }));
+  
+  return {
+    currentTurnId: 0,
+    currentDefendId: 1,
+    deck: initialDeck as Card[],
+    trumps: initialDeck[initialDeck.length - 1],
+    players: [
+      { id: 0, name: "Albert Einstein" },
+      { id: 1, name: "Marie Curie" },
+      { id: 2, name: "Isaac Newton" },
+      { id: 3, name: "Nikola Tesla" },
+    ],
+    hands,
+    attack: [] as Card[],
+    defense: [] as Card[],
+    beaten: [] as Card[],
+    isGameOver: false,
+    winner: null as string | null
+  };
+}
 
-export const table$ = new BehaviorSubject({
-  currentTurnId: 0,
-  currentDefendId: 1,
-  deck: initialDeck as Card[],
-  trumps: initialDeck[initialDeck.length - 1], // Last card is trumps
-  players: [
-    { id: 0, name: "Albert Einstein" },
-    { id: 1, name: "Marie Curie" },
-    { id: 2, name: "Isaac Newton" },
-    { id: 3, name: "Nikola Tesla" },
-  ],
-  hands: initialHands,
-  attack: [] as Card[],
-  defense: [] as Card[],
-  beaten: [] as Card[],
-});
-
-export const intent$ = new Subject<{
-  type: string;
-  playerId: number;
-  cardId?: string;
-  action?: string;
-}>();
-
-// A stream for game events (logs)
+export const table$ = new BehaviorSubject(getInitialState());
+export const intent$ = new Subject<any>();
 export const log$ = new Subject<string>();
 
-// A separate stream for active suggestions from all players
-export const suggestion$ = new BehaviorSubject<{
-  [playerId: number]: { action: string; cardId: string };
-}>({});
+export function resetGame() {
+  table$.next(getInitialState());
+  log$.next("🔄 GAME RESTARTED");
+}
 
 import * as rules from "./rules";
 
-// ... (keep previous Subjects)
-
 intent$.subscribe((intent) => {
   const table = table$.value;
-  const outcome = rules.processIntent(table as rules.TableState, intent);
+  if (table.isGameOver) return; // Ignore inputs after game over
+
+  const outcome = rules.processIntent(table as any, intent);
 
   if (outcome.type === 'GAME_OVER') {
       log$.next(`🏆 GAME OVER! ${outcome.winner} Wins!`);
-      table$.complete();
+      const nextTable = JSON.parse(JSON.stringify(table));
+      nextTable.isGameOver = true;
+      nextTable.winner = outcome.winner;
+      table$.next(nextTable);
       return;
   }
 

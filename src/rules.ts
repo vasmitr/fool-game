@@ -11,6 +11,8 @@ export interface TableState {
   beaten: Card[];
   currentTurnId: number;
   currentDefendId: number;
+  isGameOver: boolean;
+  winner: string | null;
 }
 
 // 1. Pure Predicates
