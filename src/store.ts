@@ -1,7 +1,7 @@
 import { BehaviorSubject, Subject } from "rxjs";
 import { getDeck } from "./helpers";
 import type { Card } from "./consts";
-import type { Intent, TableState } from "./rules";
+import type { Intent, TableState, ActionOutcome } from "./rules";
 
 function getInitialState(): TableState {
   const initialDeck = getDeck();
@@ -9,7 +9,7 @@ function getInitialState(): TableState {
     playerId: id,
     cards: initialDeck.splice(0, 6) as Card[],
   }));
-  
+
   return {
     currentTurnId: 0,
     currentDefendId: 1,
@@ -26,12 +26,13 @@ function getInitialState(): TableState {
     defense: [] as Card[],
     beaten: [] as Card[],
     isGameOver: false,
-    winner: null as string | null
+    winner: null as string | null,
   };
 }
 
+// --- Blackboard ---
 export const table$ = new BehaviorSubject<TableState>(getInitialState());
-export const intent$ = new Subject<Intent>();
+export const intent$ = new Subject<Intent>(); // human player input
 export const log$ = new Subject<string>();
 
 export function resetGame() {
@@ -39,30 +40,30 @@ export function resetGame() {
   log$.next("🔄 GAME RESTARTED");
 }
 
-import * as rules from "./rules";
-
-intent$.subscribe((intent) => {
-  const table = table$.value;
-  if (table.isGameOver) return; // Ignore inputs after game over
-
-  const outcome = rules.processIntent(table, intent);
-
-  if (outcome.type === 'GAME_OVER') {
-      log$.next(`🏆 GAME OVER! ${outcome.winner} Wins!`);
-      const nextTable = structuredClone(table);
-      nextTable.isGameOver = true;
-      nextTable.winner = outcome.winner;
-      table$.next(nextTable);
-      return;
+// --- Write API ---
+export function applyOutcome(table: TableState, outcome: ActionOutcome): void {
+  if (outcome.type === "GAME_OVER") {
+    log$.next(`🏆 GAME OVER! ${outcome.winner} Wins!`);
+    const next = structuredClone(table);
+    next.isGameOver = true;
+    next.winner = outcome.winner;
+    table$.next(next);
+    return;
   }
-
-  if (outcome.type === 'ERROR') {
-      log$.next(outcome.log);
-      return;
+  if (outcome.type === "ERROR") {
+    log$.next(outcome.log);
+    return;
   }
+  log$.next(outcome.log);
+  table$.next(outcome.table);
+}
 
-  if (outcome.type === 'SUCCESS') {
-      log$.next(outcome.log);
-      table$.next(outcome.table);
-  }
-});
+// --- Knowledge Source registry ---
+export type KnowledgeSource = {
+  playerId: number;
+  canAct: (table: TableState) => boolean;
+  propose: (table: TableState) => Intent | null;
+};
+
+export const knowledgeSources: KnowledgeSource[] = [];
+export const registerKS = (ks: KnowledgeSource) => knowledgeSources.push(ks);

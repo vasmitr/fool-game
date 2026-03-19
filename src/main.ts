@@ -1,5 +1,6 @@
 import { table$, log$, intent$, resetGame } from "./store";
 import "./player";
+import "./controller";
 import { findBestDefense, findBestAttack } from "./helpers";
 import type { Intent } from "./rules";
 

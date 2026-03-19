@@ -1,106 +1,70 @@
-import { table$, intent$ } from "./store";
+import { registerKS } from "./store";
 import { findBestDefense, findBestAttack } from "./helpers";
-import { map, distinctUntilChanged, mergeMap, of, EMPTY, observeOn, asyncScheduler, delay } from "rxjs";
-import { AI_DELAY_MS } from "./consts";
+import type { TableState, Intent } from "./rules";
 
-export const createPlayerBrain = (playerId: number) => {
-  return table$.pipe(
-    observeOn(asyncScheduler),
-    // 1. Only look at the state if the game isn't over or relevant to this player
-    map((table) => ({
-      isMyTurnToAttack: table.currentTurnId === playerId,
-      isMyTurnToDefend: table.currentDefendId === playerId,
-      attack: table.attack,
-      defense: table.defense,
-      myHand: table.hands.find((h) => h.playerId === playerId)?.cards || [],
-      defenderHandCount:
-        table.hands.find((h) => h.playerId === table.currentDefendId)
-          ?.cards.length || 0,
-      trumps: table.trumps,
-    })),
-    // 2. Only re-think if something actually changed for this player
-    distinctUntilChanged(
-      (prev, curr) =>
-        prev.isMyTurnToDefend === curr.isMyTurnToDefend &&
-        prev.attack.length === curr.attack.length &&
-        prev.defense.length === curr.defense.length &&
-        prev.myHand.length === curr.myHand.length &&
-        prev.defenderHandCount === curr.defenderHandCount,
-    ),
-    // 3. Logic: Decide what to do based on the context
-    mergeMap((context) => {
-      // 1. Attack / Throw-in Logic
-      // All players except defender can throw more cards if ranks match table
-      // AND defender has enough cards left in hand to defend
-      const isEligibleToAttack =
-        (context.isMyTurnToAttack ||
-          (!context.isMyTurnToDefend && context.attack.length > 0)) &&
-        context.attack.length < context.defenderHandCount;
+const canAct = (playerId: number) => (table: TableState): boolean => {
+  if (table.isGameOver) return false;
+  const isMyTurnToDefend = table.currentDefendId === playerId;
+  const isMyTurnToAttack = table.currentTurnId === playerId;
+  const defenderHandCount =
+    table.hands.find((h) => h.playerId === table.currentDefendId)?.cards
+      .length ?? 0;
 
-      if (isEligibleToAttack) {
-        const suggestion = findBestAttack(
-          context.myHand,
-          context.attack,
-          context.defense,
-          context.trumps,
-          context.defenderHandCount,
-        );
-        if (suggestion) {
-          return of({
-            type: "ATTACK_INTENT",
-            playerId: playerId,
-            cardId: suggestion.cardId,
-            action: suggestion.action,
-          }).pipe(delay(AI_DELAY_MS));
-        } else if (context.isMyTurnToAttack && context.attack.length > 0 && context.attack.length === context.defense.length) {
-          // Attacker gives up -> Beaten
-          return of({
-            type: "BEATEN_INTENT",
-            playerId: playerId,
-            action: "BEATEN",
-          }).pipe(delay(AI_DELAY_MS));
-        }
-      }
-
-      // 2. Defense Logic
-      if (context.isMyTurnToDefend && context.attack.length > 0) {
-        const suggestion = findBestDefense(
-          context.myHand,
-          context.attack,
-          context.defense,
-          context.trumps,
-        );
-        
-        if (suggestion && suggestion.action !== "TAKE") {
-          return of({
-            type: "DEFENSE_INTENT",
-            playerId: playerId,
-            cardId: suggestion.cardId,
-            action: suggestion.action === "PASS" ? "PASS" : "DEFEND",
-          }).pipe(delay(AI_DELAY_MS));
-        } else if (context.attack.length === context.defense.length) {
-          // Defender successfully defended everything -> Beaten
-          return of({
-            type: "BEATEN_INTENT",
-            playerId: playerId,
-            action: "BEATEN",
-          }).pipe(delay(AI_DELAY_MS));
-        } else if (suggestion && suggestion.action === "TAKE") {
-          // Defender takes
-          return of({
-            type: "TAKE_INTENT",
-            playerId: playerId,
-            action: "TAKE",
-          }).pipe(delay(AI_DELAY_MS));
-        }
-      }
-      // If nothing to do, return an "Empty" observable
-      return EMPTY;
-    }),
+  if (isMyTurnToDefend) return table.attack.length > table.defense.length;
+  return (
+    (isMyTurnToAttack || table.attack.length > 0) &&
+    table.attack.length < defenderHandCount
   );
 };
 
-// Initialize brains for bots (Marie Curie, Isaac Newton, Nikola Tesla)
+const propose = (playerId: number) => (table: TableState): Intent | null => {
+  const myHand =
+    table.hands.find((h) => h.playerId === playerId)?.cards ?? [];
+  const defenderHandCount =
+    table.hands.find((h) => h.playerId === table.currentDefendId)?.cards
+      .length ?? 0;
+  const isMyTurnToDefend = table.currentDefendId === playerId;
+  const isMyTurnToAttack = table.currentTurnId === playerId;
+
+  if (isMyTurnToDefend) {
+    const suggestion = findBestDefense(
+      myHand,
+      table.attack,
+      table.defense,
+      table.trumps,
+    );
+    if (!suggestion) return null;
+    if (suggestion.action === "TAKE") return { action: "TAKE", playerId };
+    return {
+      action: suggestion.action === "PASS" ? "PASS" : "DEFEND",
+      playerId,
+      cardId: suggestion.cardId,
+    };
+  }
+
+  const suggestion = findBestAttack(
+    myHand,
+    table.attack,
+    table.defense,
+    table.trumps,
+    defenderHandCount,
+  );
+  if (suggestion) return { action: "ATTACK", playerId, cardId: suggestion.cardId };
+  if (
+    isMyTurnToAttack &&
+    table.attack.length > 0 &&
+    table.attack.length === table.defense.length
+  ) {
+    return { action: "BEATEN", playerId };
+  }
+  return null;
+};
+
+// Register AI bots (Marie Curie, Isaac Newton, Nikola Tesla) as Knowledge Sources
 [1, 2, 3].forEach((id) => {
-  createPlayerBrain(id).subscribe(intent$ as any);
+  registerKS({
+    playerId: id,
+    canAct: canAct(id),
+    propose: propose(id),
+  });
 });

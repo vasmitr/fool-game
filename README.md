@@ -1,101 +1,83 @@
-# Fool (Durak) Game - Reactive Engine
+# Fool (Durak) Game - Reactive Blackboard Engine
 
-A fully autonomous and playable implementation of the classic Russian card game **Fool** (Durak), built using a reactive architecture and modern web technologies.
+A fully playable implementation of the classic Russian card game **Fool** (Durak), built as an exploration of the **Blackboard architectural pattern** using RxJS and TypeScript.
 
 ## 🃏 Game Features
 
-- **Intelligent AI Bots**: Powered by Marie Curie, Isaac Newton, and Nikola Tesla – each tracks the table state and makes tactical moves.
+- **Intelligent AI Bots**: Marie Curie, Isaac Newton, and Nikola Tesla each observe the blackboard and make tactical moves.
 - **Human Player Interface**: Take control of Albert Einstein and challenge the AI scientists.
-- **Reactive Engine**: Built entirely on RxJS streams for state management, AI "thinking", and UI updates.
-- **Autonomous Mode**: The bots can play against each other in a fully automated simulation.
-- **Modern UI**: Dark-themed observer dashboard with real-time logs and animations (via Vite).
+- **Autonomous Mode**: Bots play against each other in a fully automated simulation (`src/index.ts`).
+- **Modern UI**: Dark-themed dashboard with real-time game log (via Vite).
 
-## 🏗️ Architecture Overview
+## 🏗️ Architecture: Blackboard Pattern
 
-The project follows a unidirectional reactive data flow pattern using **RxJS Observables**.
+The project implements the **Blackboard** architectural pattern, where independent agents (Knowledge Sources) observe a shared state and contribute solutions.
 
-### Core Components:
+### Components
 
-1.  **State Management (`src/store.ts`)**:
-    - **`table$`**: A `BehaviorSubject` containing the current game state (deck, hands, table, trumps).
-    - **`intent$`**: A `Subject` where all actions (Attack, Defend, Pass, Take) are funneled.
-    - **Orchestrator**: Subscribes to `intent$`, validates moves against standard Durak rules, and updates `table$`.
+| File | Blackboard Role | Responsibility |
+|------|----------------|----------------|
+| `src/store.ts` | **Blackboard** | Shared game state (`table$`), write API (`applyOutcome`), KS registry |
+| `src/controller.ts` | **Controller** | Selects one eligible KS per state change, routes human intents, auto-passes on timeout |
+| `src/player.ts` | **Knowledge Sources** | AI bots register `canAct` + `propose` functions |
+| `src/rules.ts` | **Rule Engine** | Pure game logic, validates and transforms state |
+| `src/helpers.ts` | **AI Strategy** | Best-attack and best-defense algorithms |
 
-2.  **AI Brains (`src/player.ts`)**:
-    - Each bot is a stream that monitors `table$`.
-    - Uses logic from `src/helpers.ts` to find the "Best Attack" or "Best Defense".
-    - Incorporates a `delay(1000)` pipe to make the game observable and human-readable.
-    - Emits intents to the `intent$` stream.
+### Data Flow
 
-3.  **Frontend (`src/main.ts` & `index.html`)**:
-    - Subscribes to `table$` and `log$` to update the DOM in real-time.
-    - Provides click handlers for the human player (Player 0) to emit intents to the orchestrator.
-
-### Unidirectional Data Flow:
-
-```mermaid
-graph TD
-    A[Human Interaction / AI Brain] -->|Emit Intent| B(Intent Subject)
-    B -->|Process Intent| C{Orchestrator}
-    C -->|Update State| D(State Subject)
-    D -->|Notify Subscribers| A
-    D -->|Render UI| E(Frontend Dashboard)
+```
+Human click → intent$ → Controller → applyOutcome → table$ (Blackboard)
+                                                         ↓
+                                          Controller selects eligible KS
+                                                         ↓
+                                          timer(AI_DELAY_MS) → KS.propose()
+                                                         ↓
+                                                    applyOutcome → table$
 ```
 
-### RxJS Marble Diagram:
-To visualize the autonomous flow with its built-in delays:
+### Controller Selection Priority
 
-```text
-Intent$:    --[A1]----------[D2]----------[B1]---->
-              |              |              |
- (delay 1s)   v              v              v
-Processing:   ----[A1]----------[D2]----------[B1]-->
-              |              |              |
- (orchestrate)v              v              v
-Table$:     S0---S1------------S2------------S3---->
+On each `table$` emission, the controller picks **one** eligible KS:
 
-Legend:
-A1: Player 1 Attack Intent
-D2: Player 2 Defense Intent
-B1: Player 1 Beaten (Pass) Intent
-S0-S3: Successive Game States
-```
+1. **Defender** — when there are undefended cards on the table
+2. **Primary attacker** — when all attacks are defended
+3. **Throw-in players** — other non-defenders with matching-rank cards
+
+If no KS is eligible and the bout is fully defended (human's decision time), an auto-pass fires after `AUTO_PASS_MS`. `switchMap` ensures only one pending action exists at a time — cancelling stale timers when state changes.
+
+### RxJS Highlights
+
+- `BehaviorSubject` — blackboard holds and replays current state to new subscribers
+- `switchMap` — cancels pending AI timers on new state, preventing race conditions
+- `timer` — non-blocking AI delay; replaced original `of(null).pipe(delay(...))`
+- Pure `canAct`/`propose` functions replace the original self-initiating RxJS streams per bot
 
 ## 🛠️ Tech Stack
 
-- **Languages**: TypeScript, HTML5, CSS3
+- **Language**: TypeScript
 - **Reactive Programming**: [RxJS v7+](https://rxjs.dev/)
 - **Build Tool**: [Vite](https://vitejs.dev/)
 - **Testing**: [Vitest](https://vitest.dev/)
-- **Dependencies**: Underscore.js (for shuffling)
+- **Utilities**: Underscore.js (deck shuffling)
 
 ## 🚀 Getting Started
 
-### Prerequisites
-
-- [Node.js](https://nodejs.org/) (v16+)
-- npm
-
-### Installation
-
 ```bash
-npm install
+pnpm install
 ```
 
-### Running the Game
-
-To start the interactive web interface:
-
+**Interactive UI:**
 ```bash
-npm start
+pnpm dev
+```
+Open `http://localhost:5173/` in your browser.
+
+**Autonomous CLI simulation:**
+```bash
+pnpm tsx src/index.ts
 ```
 
-Then open `http://localhost:5173/` in your browser.
-
-### Running Tests
-
-To verify the game rules and logic:
-
+**Tests:**
 ```bash
-npm test
+pnpm test
 ```

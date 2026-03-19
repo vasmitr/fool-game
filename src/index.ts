@@ -1,5 +1,6 @@
 import { table$ } from "./store";
 import "./player";
+import "./controller";
 
 console.log("=== DURAK AUTONOMOUS GAME START ===");
 

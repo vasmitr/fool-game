@@ -17,9 +17,10 @@
     "underscore": "^1.13.8"
   },
   "devDependencies": {
+    "@types/node": "^25.5.0",
     "@types/underscore": "^1.13.0",
-    "vitest": "^4.1.0",
     "tsx": "^4.0.0",
-    "vite": "^5.0.0"
+    "vite": "^5.0.0",
+    "vitest": "^4.1.0"
   }
 }
