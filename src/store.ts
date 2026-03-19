@@ -86,6 +86,25 @@ intent$.subscribe((intent) => {
         }
         table.attack = [...table.attack, card];
       } else if (intent.action === "DEFEND") {
+        // Validate card can beat the attack
+        const cardToDefend = table.attack[table.defense.length];
+        if (!cardToDefend) {
+             playerHand.cards.push(card);
+             return;
+        }
+
+        const isTrumpArr = card.suit === table.trumps.suit;
+        const targetIsTrump = cardToDefend.suit === table.trumps.suit;
+        
+        const canBeat = (card.suit === cardToDefend.suit && card.value > cardToDefend.value) ||
+                       (isTrumpArr && !targetIsTrump);
+        
+        if (!canBeat) {
+            log$.next(`🚫 ${playerName}: ${card.rank}${card.suit[0]} cannot beat ${cardToDefend.rank}${cardToDefend.suit[0]}.`);
+            playerHand.cards.push(card);
+            table$.next(table);
+            return;
+        }
         table.defense = [...table.defense, card];
       } else if (intent.action === "PASS") {
         table.attack = [...table.attack, card];
