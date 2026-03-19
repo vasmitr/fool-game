@@ -123,7 +123,8 @@ table$.subscribe({
         humanControls.style.display = isHumanActive ? "block" : "none";
         
         // Disable buttons if not appropriate
-        (btnPass as HTMLButtonElement).disabled = table.currentTurnId !== HUMAN_ID || table.attack.length === 0;
+        const isParticipant = table.currentTurnId === HUMAN_ID || table.currentDefendId === HUMAN_ID;
+        (btnPass as HTMLButtonElement).disabled = !isParticipant || table.attack.length === 0;
         (btnTake as HTMLButtonElement).disabled = table.currentDefendId !== HUMAN_ID || table.attack.length === 0;
     },
     complete: () => {

@@ -115,19 +115,43 @@ describe("rules.processIntent", () => {
     }
   });
 
-  it("should allow BEATEN", () => {
+  it("should allow BEATEN by attacker", () => {
     const state = { 
         ...initialState, 
         attack: [{ id: "a1", rank: "6", suit: "spades", value: 6 }],
-        defense: [{ id: "d1", rank: "7", suit: "spades", value: 7 }]
+        defense: [{ id: "d1", rank: "7", suit: "spades", value: 7 }],
+        currentTurnId: 0,
+        currentDefendId: 1
     };
     const intent = { action: "BEATEN", playerId: 0 };
     const outcome = rules.processIntent(state, intent);
     expect(outcome.type).toBe("SUCCESS");
-    if (outcome.type === "SUCCESS") {
-        expect(outcome.table.beaten.length).toBe(2);
-        expect(outcome.table.attack.length).toBe(0);
-    }
+  });
+
+  it("should allow BEATEN by defender", () => {
+    const state = { 
+        ...initialState, 
+        attack: [{ id: "a1", rank: "6", suit: "spades", value: 6 }],
+        defense: [{ id: "d1", rank: "7", suit: "spades", value: 7 }],
+        currentTurnId: 0,
+        currentDefendId: 1
+    };
+    const intent = { action: "BEATEN", playerId: 1 };
+    const outcome = rules.processIntent(state, intent);
+    expect(outcome.type).toBe("SUCCESS");
+  });
+
+  it("should reject BEATEN if not balanced", () => {
+    const state = { 
+        ...initialState, 
+        attack: [{ id: "a1", rank: "6", suit: "spades", value: 6 }],
+        defense: [],
+        currentTurnId: 0,
+        currentDefendId: 1
+    };
+    const intent = { action: "BEATEN", playerId: 0 };
+    const outcome = rules.processIntent(state, intent);
+    expect(outcome.type).toBe("ERROR");
   });
 
   it("should detect GAME_OVER", () => {

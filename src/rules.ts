@@ -131,7 +131,8 @@ const handleTake = (table: TableState, playerId: number): ActionOutcome => {
 };
 
 const handleBeaten = (table: TableState, playerId: number): ActionOutcome => {
-  if (table.currentTurnId !== playerId || !canEndBout(table)) return { type: 'ERROR', log: 'Cannot end bout' };
+  const isParticipant = table.currentTurnId === playerId || table.currentDefendId === playerId;
+  if (!isParticipant || !canEndBout(table)) return { type: 'ERROR', log: 'Cannot end bout' };
   
   const nextState = refillHands({
     ...table,

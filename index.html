@@ -1,115 +1,177 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fool Game Observer</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Durak</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #1a1a2e;
-            color: #e9e9e9;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .container {
-            max-width: 800px;
-            width: 100%;
-            background: #16213e;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-        h1 { text-align: center; color: #0f3460; background: #e94560; padding: 10px; border-radius: 8px; margin-top: 0; }
-        .stats { display: flex; justify-content: space-between; margin-bottom: 20px; font-weight: bold; }
-        .table-area {
-            background: #0f3460;
-            padding: 20px;
-            border-radius: 8px;
-            min-height: 100px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-            margin-bottom: 20px;
-            border: 2px dashed #e94560;
-        }
-        .card {
-            width: 60px;
-            height: 90px;
-            background: white;
-            color: black;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.2rem;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
-            position: relative;
-        }
-        .card.hearts, .card.diamonds { color: #e94560; }
-        .card.spades, .card.clubs { color: #1a1a2e; }
-        .players {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-        }
-        .player-box {
-            background: #0f3460;
-            padding: 10px;
-            border-radius: 8px;
-            border: 2px solid transparent;
-        }
-        .player-box.active { border-color: #e94560; background: #1a1a2e; }
-        .player-box.defender { border-color: #f7d794; }
-        .log {
-            margin-top: 20px;
-            height: 150px;
-            overflow-y: auto;
-            background: #000;
-            color: #0f0;
-            font-family: monospace;
-            padding: 10px;
-            font-size: 0.8rem;
-            border-radius: 4px;
-        }
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #1a1a2e;
+        color: #e9e9e9;
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .container {
+        max-width: 800px;
+        width: 100%;
+        background: #16213e;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      }
+      h1 {
+        text-align: center;
+        color: #0f3460;
+        background: #e94560;
+        padding: 10px;
+        border-radius: 8px;
+        margin-top: 0;
+      }
+      .stats {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        font-weight: bold;
+      }
+      .table-area {
+        background: #0f3460;
+        padding: 20px;
+        border-radius: 8px;
+        min-height: 100px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        margin-bottom: 20px;
+        border: 2px dashed #e94560;
+      }
+      .card {
+        width: 60px;
+        height: 90px;
+        background: white;
+        color: black;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+        position: relative;
+      }
+      .card.hearts,
+      .card.diamonds {
+        color: #e94560;
+      }
+      .card.spades,
+      .card.clubs {
+        color: #1a1a2e;
+      }
+      .players {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+      }
+      .player-box {
+        background: #0f3460;
+        padding: 10px;
+        border-radius: 8px;
+        border: 2px solid transparent;
+      }
+      .player-box.active {
+        border-color: #e94560;
+        background: #1a1a2e;
+      }
+      .player-box.defender {
+        border-color: #f7d794;
+      }
+      .log {
+        margin-top: 20px;
+        height: 150px;
+        overflow-y: auto;
+        background: #000;
+        color: #0f0;
+        font-family: monospace;
+        padding: 10px;
+        font-size: 0.8rem;
+        border-radius: 4px;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <h1>Fool Game Observer</h1>
-        <div class="stats" id="game-stats">
-            <div>Deck: <span id="deck-count">0</span></div>
-            <div>Trumps: <span id="trump-info">?</span></div>
-        </div>
-        
-        <div class="table-area" id="bout-area">
-            <!-- Cards currently being played -->
-        </div>
+      <h1>Durak</h1>
+      <div class="stats" id="game-stats">
+        <div>Deck: <span id="deck-count">0</span></div>
+        <div>Trumps: <span id="trump-info">?</span></div>
+      </div>
 
-        <div class="players" id="player-list">
-            <!-- Bot players go here -->
-        </div>
+      <div class="table-area" id="bout-area">
+        <!-- Cards currently being played -->
+      </div>
 
-        <div style="margin-top: 30px; text-align: center;">
-            <h2 id="human-name">Albert Einstein (You)</h2>
-            <div id="human-controls" style="margin-bottom: 10px; display: none;">
-                <button id="btn-pass" style="background: #e94560; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold;">PASS / END TURN</button>
-                <button id="btn-take" style="background: #f7d794; color: #1a1a2e; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: 10px;">TAKE CARDS</button>
-            </div>
-            <div id="human-hand" style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; min-height: 100px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 8px;">
-                <!-- Human cards go here -->
-            </div>
-        </div>
+      <div class="players" id="player-list">
+        <!-- Bot players go here -->
+      </div>
 
-        <div class="log" id="game-log">
-            <div>Waiting for game start...</div>
+      <div style="margin-top: 30px; text-align: center">
+        <h2 id="human-name">Albert Einstein (You)</h2>
+        <div id="human-controls" style="margin-bottom: 10px; display: none">
+          <button
+            id="btn-pass"
+            style="
+              background: #e94560;
+              color: white;
+              border: none;
+              padding: 10px 20px;
+              border-radius: 4px;
+              cursor: pointer;
+              font-weight: bold;
+            "
+          >
+            PASS / END TURN
+          </button>
+          <button
+            id="btn-take"
+            style="
+              background: #f7d794;
+              color: #1a1a2e;
+              border: none;
+              padding: 10px 20px;
+              border-radius: 4px;
+              cursor: pointer;
+              font-weight: bold;
+              margin-left: 10px;
+            "
+          >
+            TAKE CARDS
+          </button>
         </div>
+        <div
+          id="human-hand"
+          style="
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            min-height: 100px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+          "
+        >
+          <!-- Human cards go here -->
+        </div>
+      </div>
+
+      <div class="log" id="game-log">
+        <div>Waiting for game start...</div>
+      </div>
     </div>
     <script type="module" src="/src/main.ts"></script>
-</body>
+  </body>
 </html>

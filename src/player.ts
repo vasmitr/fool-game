@@ -2,6 +2,8 @@ import { table$, intent$ } from "./store";
 import { findBestDefense, findBestAttack } from "./helpers";
 import { map, distinctUntilChanged, mergeMap, of, EMPTY, observeOn, asyncScheduler, delay } from "rxjs";
 
+const AI_DELAY_MS = 3000;
+
 export const createPlayerBrain = (playerId: number) => {
   return table$.pipe(
     observeOn(asyncScheduler),
@@ -50,14 +52,14 @@ export const createPlayerBrain = (playerId: number) => {
             playerId: playerId,
             cardId: suggestion.cardId,
             action: suggestion.action,
-          }).pipe(delay(1000));
-        } else if (context.isMyTurnToAttack && context.attack.length > 0) {
+          }).pipe(delay(AI_DELAY_MS));
+        } else if (context.isMyTurnToAttack && context.attack.length > 0 && context.attack.length === context.defense.length) {
           // Attacker gives up -> Beaten
           return of({
             type: "BEATEN_INTENT",
             playerId: playerId,
             action: "BEATEN",
-          }).pipe(delay(1000));
+          }).pipe(delay(AI_DELAY_MS));
         }
       }
 
@@ -69,20 +71,28 @@ export const createPlayerBrain = (playerId: number) => {
           context.defense,
           context.trumps,
         );
+        
         if (suggestion && suggestion.action !== "TAKE") {
           return of({
             type: "DEFENSE_INTENT",
             playerId: playerId,
             cardId: suggestion.cardId,
             action: suggestion.action === "PASS" ? "PASS" : "DEFEND",
-          }).pipe(delay(1000));
+          }).pipe(delay(AI_DELAY_MS));
+        } else if (context.attack.length === context.defense.length) {
+          // Defender successfully defended everything -> Beaten
+          return of({
+            type: "BEATEN_INTENT",
+            playerId: playerId,
+            action: "BEATEN",
+          }).pipe(delay(AI_DELAY_MS));
         } else if (suggestion && suggestion.action === "TAKE") {
           // Defender takes
           return of({
-             type: "TAKE_INTENT",
-             playerId: playerId,
-             action: "TAKE"
-          }).pipe(delay(1000));
+            type: "TAKE_INTENT",
+            playerId: playerId,
+            action: "TAKE",
+          }).pipe(delay(AI_DELAY_MS));
         }
       }
       // If nothing to do, return an "Empty" observable
