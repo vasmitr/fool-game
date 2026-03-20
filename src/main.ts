@@ -200,7 +200,7 @@ table$.subscribe({
         if (hasStateChanged(['beaten'])) {
             discardStack.innerHTML = "";
             const count = table.beaten.length;
-            discardCount.textContent = (count / 2).toString(); // Bout count or card count? Let's show card count / 2 as rounds
+            discardCount.textContent = count.toString();
             
             const visibleDiscard = Math.min(Math.floor(count / 2), 5);
             for (let i = 0; i < visibleDiscard; i++) {

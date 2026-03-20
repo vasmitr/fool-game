@@ -13,8 +13,8 @@ function getInitialState(): TableState {
   return {
     currentTurnId: 0,
     currentDefendId: 1,
-    deck: initialDeck as Card[],
-    trumps: initialDeck[initialDeck.length - 1],
+    deck: initialDeck,
+    trumps: initialDeck[initialDeck.length - 1] || initialDeck[0],
     players: [
       { id: 0, name: "Albert Einstein" },
       { id: 1, name: "Marie Curie" },

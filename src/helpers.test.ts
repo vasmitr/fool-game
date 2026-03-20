@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { getDeck, findBestDefense, findBestAttack, refillHands } from "./helpers";
-import type { Card } from "./consts";
+import type { Card, Rank, Suit } from "./consts";
 
 describe("getDeck", () => {
   it("should return a deck of 36 cards", () => {
@@ -68,8 +68,8 @@ describe("findBestDefense", () => {
   it("early game: should prefer same-suit card over trump", () => {
     const attackCards: Card[] = [{ id: "a1", rank: "8", suit: "spades", value: 8 }];
     const playerCards: Card[] = [
-      { id: "p1", rank: "7", suit: "hearts", value: 7 },  // trump 7 — beats non-trump
-      { id: "p2", rank: "9", suit: "spades", value: 9 },  // same-suit 9
+      { id: "p1", rank: "7" as Rank, suit: "hearts" as Suit, value: 7 },  // trump 7 — beats non-trump
+      { id: "p2", rank: "9" as Rank, suit: "spades" as Suit, value: 9 },  // same-suit 9
     ];
     // Full deck: score(trump 7) = 7 + 14 = 21 vs score(9♠) = 9 → pick p2
     const action = findBestDefense(playerCards, attackCards, [], trumps, 36);
@@ -204,13 +204,11 @@ describe("findBestAttack", () => {
 });
 
 describe("advanced rules", () => {
-  const trumps: Card = { id: "t1", rank: "6", suit: "hearts", value: 6 };
-
   it("should refill hands to 6 cards", () => {
-    const hands = [
+    const hands: { playerId: number; cards: Card[] }[] = [
         { playerId: 0, cards: [{ id: "c1", rank: "A", suit: "spades", value: 14 }] },
     ];
-    const deck = [
+    const deck: Card[] = [
         { id: "d1", rank: "6", suit: "clubs", value: 6 },
         { id: "d2", rank: "7", suit: "clubs", value: 7 },
         { id: "d3", rank: "8", suit: "clubs", value: 8 },

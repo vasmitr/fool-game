@@ -1,10 +1,10 @@
 import { describe, it, expect } from "vitest";
 import * as rules from "./rules";
 import { TableState, Intent } from "./rules";
-import { Card } from "./consts";
+import { Card, Rank } from "./consts";
 
 describe("Durak Rules Engine", () => {
-  const getDummy = (id: string, rank: string = "6"): Card => ({ id, rank, suit: "clubs", value: 6 });
+  const getDummy = (id: string, rank: Rank = "6"): Card => ({ id, rank, suit: "clubs", value: 6 });
   
   const initialState: TableState = {
     deck: [{ id: "deck-dummy", rank: "A", suit: "hearts", value: 14 } as Card],
