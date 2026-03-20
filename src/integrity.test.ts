@@ -10,7 +10,7 @@ describe("Game Integrity Tests", () => {
       ...table.hands.flatMap(h => h.cards),
       ...table.attack,
       ...table.defense,
-      ...table.beaten
+      ...table.discardPile
     ];
 
     // 1. Exactly 36 cards exist
@@ -70,7 +70,7 @@ describe("Game Integrity Tests", () => {
         ],
         attack: [],
         defense: [],
-        beaten: [],
+        discardPile: [],
         currentTurnId: 0,
         currentDefendId: 1,
         isGameOver: false,
@@ -95,7 +95,7 @@ describe("Game Integrity Tests", () => {
         ],
         attack: [],
         defense: [],
-        beaten: [],
+        discardPile: [],
         currentTurnId: 0,
         currentDefendId: 1,
         isGameOver: false,
@@ -138,7 +138,7 @@ describe("Game Integrity Tests", () => {
     }
 
     if (tableAfterDefend) {
-        const prevBeatenCount = table.beaten.length;
+        const prevBeatenCount = table.discardPile.length;
         const attackCount = tableAfterDefend.attack.length;
         const defenseCount = tableAfterDefend.defense.length;
         
@@ -152,7 +152,7 @@ describe("Game Integrity Tests", () => {
             checkNoIllegalTransfers(table, nextTable);
             
             // Verify beaten count
-            expect(nextTable.beaten.length).toBe(prevBeatenCount + attackCount + defenseCount);
+            expect(nextTable.discardPile.length).toBe(prevBeatenCount + attackCount + defenseCount);
             table = nextTable;
         }
     }
@@ -187,7 +187,7 @@ describe("Game Integrity Tests", () => {
           ],
           attack: [],
           defense: [],
-          beaten: [],
+          discardPile: [],
           currentTurnId: 0,
           currentDefendId: 1,
           isGameOver: false,
@@ -216,7 +216,7 @@ describe("Game Integrity Tests", () => {
       const outcome = processIntent(table, { action: "BEATEN", playerId: 0 });
       expect(outcome.type).toBe("SUCCESS");
       if (outcome.type === "SUCCESS") {
-          expect(outcome.table.beaten.length).toBe(4);
+          expect(outcome.table.discardPile.length).toBe(4);
           checkIntegrity(outcome.table);
       }
   });
@@ -244,7 +244,7 @@ describe("Game Integrity Tests", () => {
           ],
           attack: [],
           defense: [],
-          beaten: [],
+          discardPile: [],
           currentTurnId: 0,
           currentDefendId: 1,
           isGameOver: false,
@@ -276,7 +276,7 @@ describe("Game Integrity Tests", () => {
       const outcome = processIntent(table, { action: "BEATEN", playerId: 2 }); // P2 can close if they added cards?
       expect(outcome.type).toBe("SUCCESS");
       if (outcome.type === "SUCCESS") {
-          expect(outcome.table.beaten.length).toBe(4);
+          expect(outcome.table.discardPile.length).toBe(4);
           checkIntegrity(outcome.table);
       }
   });
@@ -302,7 +302,7 @@ describe("Game Integrity Tests", () => {
         ],
         attack: [],
         defense: [],
-        beaten: [],
+        discardPile: [],
         currentTurnId: 0,
         currentDefendId: 1,
         isGameOver: false,
@@ -348,7 +348,7 @@ describe("Game Integrity Tests", () => {
           ],
           attack: [],
           defense: [],
-          beaten: [],
+          discardPile: [],
           currentTurnId: 0,
           currentDefendId: 1,
           isGameOver: false,

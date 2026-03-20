@@ -8,7 +8,6 @@ const deckCount = document.getElementById("deck-count")!;
 const deckStack = document.getElementById("deck-stack")!;
 const boutArea = document.getElementById("bout-area")!;
 const discardStack = document.getElementById("discard-stack")!;
-const discardCount = document.getElementById("discard-count")!;
 const gameLog = document.getElementById("game-log")!;
 const btnCopyLog = document.getElementById("btn-copy-log")!;
 const humanHandArea = document.getElementById("human-hand")!;
@@ -158,7 +157,9 @@ table$.subscribe({
                 playerBox.className = `player-box ${table.currentTurnId === player.id ? "active" : ""} ${table.currentDefendId === player.id ? "defender" : ""}`;
                 
                 const hand = table.hands.find((h: any) => h.playerId === player.id);
+                const prevHand = lastTableState?.hands.find((h: any) => h.playerId === player.id);
                 const cardCount = hand?.cards.length || 0;
+                const prevCount = prevHand?.cards.length || 0;
                 
                 playerBox.innerHTML = `
                     <div style="font-weight: bold; margin-bottom: 5px;">${player.name}</div>
@@ -168,7 +169,8 @@ table$.subscribe({
                 const miniHand = playerBox.querySelector(".mini-hand")!;
                 for (let i = 0; i < cardCount; i++) {
                     const miniCard = document.createElement("div");
-                    miniCard.className = "mini-card";
+                    const isNew = i >= prevCount;
+                    miniCard.className = `mini-card ${isNew ? 'mini-card-taken' : ''}`;
                     miniHand.appendChild(miniCard);
                 }
                 botPlayersArea.appendChild(playerBox);
@@ -197,17 +199,26 @@ table$.subscribe({
         }
 
         // 3. Discard Pile (Beaten)
-        if (hasStateChanged(['beaten'])) {
+        if (hasStateChanged(['discardPile'])) {
             discardStack.innerHTML = "";
-            const count = table.beaten.length;
-            discardCount.textContent = count.toString();
+            const count = table.discardPile.length;
+            const prevCount = lastTableState?.discardPile?.length || 0;
             
-            const visibleDiscard = Math.min(Math.floor(count / 2), 5);
+            const visibleDiscard = Math.min(Math.floor(count / 2), 10);
             for (let i = 0; i < visibleDiscard; i++) {
                 const back = renderCardBack();
                 back.classList.add("deck-card");
-                back.style.transform = `rotate(${(i - 2) * 5}deg)`;
-                back.style.top = `-${i}px`;
+                if (i === visibleDiscard - 1 && count > prevCount) {
+                    back.classList.add("card-beaten");
+                }
+                
+                // Deterministic "chaoticness" based on index
+                const rotation = (i * 133) % 40 - 20; 
+                const offsetX = (i * 7) % 15 - 7;
+                const offsetY = (i * 11) % 15 - 7;
+                
+                back.style.transform = `rotate(${rotation}deg) translate(${offsetX}px, ${offsetY}px)`;
+                back.style.zIndex = i.toString();
                 discardStack.appendChild(back);
             }
         }
@@ -236,8 +247,15 @@ table$.subscribe({
             const humanHand = table.hands.find((h: any) => h.playerId === HUMAN_ID)?.cards || [];
             humanHandArea.innerHTML = "";
             humanHand.forEach((card: any) => {
-                const isNew = lastTableState && !lastTableState.hands.find((h: any) => h.playerId === HUMAN_ID)?.cards.some((c: any) => c.id === card.id);
-                humanHandArea.appendChild(renderCard(card, isNew ? 'card-dealt' : '', () => onHumanCardClick(card)));
+                let animation = '';
+                if (lastTableState) {
+                    const wasInHand = lastTableState.hands.find((h: any) => h.playerId === HUMAN_ID)?.cards.some((c: any) => c.id === card.id);
+                    if (!wasInHand) {
+                        const wasOnTable = lastTableState.attack.some((c: any) => c.id === card.id) || lastTableState.defense.some((c: any) => c.id === card.id);
+                        animation = wasOnTable ? 'card-taken' : 'card-dealt';
+                    }
+                }
+                humanHandArea.appendChild(renderCard(card, animation, () => onHumanCardClick(card)));
             });
         }
 

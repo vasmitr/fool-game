@@ -125,15 +125,15 @@
         align-items: center;
       }
       @keyframes deal {
-        from { transform: scale(0.5); opacity: 0; }
-        to { transform: scale(1); opacity: 1; }
+        from { transform: translate(-45vw, -30vh) rotate(90deg); opacity: 0; }
+        to { transform: translate(0, 0) rotate(0deg); opacity: 1; }
       }
       .card-dealt {
-        animation: deal 0.3s ease-out;
+        animation: deal 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
       }
 
       @keyframes throw-from-bottom {
-        from { transform: translateY(200px) rotate(20deg); opacity: 0; }
+        from { transform: translateY(40vh) rotate(15deg); opacity: 0; }
         to { transform: translateY(0) rotate(0deg); opacity: 1; }
       }
       .throw-bottom {
@@ -141,12 +141,38 @@
       }
 
       @keyframes throw-from-top {
-        from { transform: translateY(-200px) rotate(-20deg); opacity: 0; }
+        from { transform: translateY(-40vh) rotate(-15deg); opacity: 0; }
         to { transform: translateY(0) rotate(0deg); opacity: 1; }
       }
       .throw-top {
         animation: throw-from-top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       }
+
+      @keyframes take-to-hand {
+        from { transform: translate(0, -40vh) scale(1.1); filter: brightness(1.2); }
+        to { transform: translate(0, 0) scale(1); filter: brightness(1); }
+      }
+      .card-taken {
+        animation: take-to-hand 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      }
+
+      @keyframes fly-to-beaten {
+        from { transform: translate(-30vw, 50vh) rotate(-30deg); opacity: 0; }
+        to { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+      }
+      .card-beaten {
+        animation: fly-to-beaten 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      @keyframes mini-take {
+        0% { transform: scale(1); filter: brightness(1); }
+        50% { transform: scale(1.5); filter: brightness(1.5); }
+        100% { transform: scale(1); filter: brightness(1); }
+      }
+      .mini-card-taken {
+        animation: mini-take 0.5s ease-out;
+      }
+
       .discard-stack {
         position: relative;
         width: 70px;
@@ -315,10 +341,9 @@
             </div>
 
             <div class="discard-area">
-                <div class="discard-stack" id="discard-stack">
-                    <!-- Discarded cards rendered here -->
+                <div class="discard-stack" id="discard-stack" style="margin-top: 20px;">
+                    <!-- Randomized card backs here -->
                 </div>
-                <div style="margin-top: 10px; font-weight: bold; color: #888; text-align: center;">BEATEN: <span id="discard-count">0</span></div>
             </div>
         </div>
 

@@ -23,7 +23,7 @@ const baseState: TableState = {
   ],
   attack: [],
   defense: [],
-  beaten: [],
+  discardPile: [],
   currentTurnId: 0,
   currentDefendId: 1,
   isGameOver: false,

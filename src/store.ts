@@ -24,7 +24,7 @@ function getInitialState(): TableState {
     hands,
     attack: [] as Card[],
     defense: [] as Card[],
-    beaten: [] as Card[],
+    discardPile: [] as Card[],
     isGameOver: false,
     winner: null as string | null,
   };

@@ -17,7 +17,7 @@ export interface TableState {
   hands: Hand[];
   attack: Card[];
   defense: Card[];
-  beaten: Card[];
+  discardPile: Card[];
   currentTurnId: number;
   currentDefendId: number;
   isGameOver: boolean;
@@ -183,7 +183,7 @@ const handleBeaten = (table: TableState, playerId: number): ActionOutcome => {
   const nextAttacker = table.currentDefendId;
   const nextState = refillHands({
     ...table,
-    beaten: [...table.beaten, ...table.attack, ...table.defense],
+    discardPile: [...table.discardPile, ...table.attack, ...table.defense],
     attack: [],
     defense: [],
     currentTurnId: nextAttacker,
