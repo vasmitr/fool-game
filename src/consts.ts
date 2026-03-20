@@ -1,7 +1,6 @@
 export const suits = ["hearts", "diamonds", "clubs", "spades"];
-export const ranks = ["6", "7", "8", "9", "10", "J", "Q", "K", "A"];
 
-export const rankValues: Record<string, number> = {
+export const rankValues = {
   "6": 6,
   "7": 7,
   "8": 8,
@@ -15,8 +14,8 @@ export const rankValues: Record<string, number> = {
 
 export interface Card {
   id: string;
-  rank: (typeof ranks)[number];
-  value: number;
+  rank: keyof typeof rankValues;
+  value: (typeof rankValues)[keyof typeof rankValues];
   suit: (typeof suits)[number];
 }
 

@@ -11,6 +11,14 @@ const canAct = (playerId: number) => (table: TableState): boolean => {
       .length ?? 0;
 
   if (isMyTurnToDefend) return table.attack.length > table.defense.length;
+  // Primary attacker can always end the bout (BEATEN) once all attacks are defended
+  if (
+    isMyTurnToAttack &&
+    table.attack.length > 0 &&
+    table.attack.length === table.defense.length
+  ) {
+    return true;
+  }
   return (
     (isMyTurnToAttack || table.attack.length > 0) &&
     table.attack.length < defenderHandCount
@@ -18,6 +26,9 @@ const canAct = (playerId: number) => (table: TableState): boolean => {
 };
 
 const propose = (playerId: number) => (table: TableState): Intent | null => {
+  // Human player (id=0) never auto-proposes; their input arrives via intent$
+  if (playerId === 0) return null;
+
   const myHand =
     table.hands.find((h) => h.playerId === playerId)?.cards ?? [];
   const defenderHandCount =
@@ -62,8 +73,8 @@ const propose = (playerId: number) => (table: TableState): Intent | null => {
   return null;
 };
 
-// Register AI bots (Marie Curie, Isaac Newton, Nikola Tesla) as Knowledge Sources
-[1, 2, 3].forEach((id) => {
+// Register all players as Knowledge Sources (human id=0 never auto-proposes)
+[0, 1, 2, 3].forEach((id) => {
   registerKS({
     playerId: id,
     canAct: canAct(id),

@@ -1,57 +1,55 @@
 import { EMPTY, timer } from "rxjs";
 import { switchMap, map } from "rxjs";
 import { table$, intent$, knowledgeSources, applyOutcome } from "./store";
+import type { KnowledgeSource } from "./store";
 import type { TableState, Intent } from "./rules";
 import { processIntent } from "./rules";
 import { AI_DELAY_MS } from "./consts";
 
-const AUTO_PASS_MS = 5000;
+const applyIntent = (intent: Intent) => {
+  const current = table$.value;
+  if (current.isGameOver) return;
+  applyOutcome(current, processIntent(current, intent));
+};
 
-// Human player: direct write to blackboard via UI
-intent$.subscribe((intent) => {
-  const table = table$.value;
-  if (table.isGameOver) return;
-  applyOutcome(table, processIntent(table, intent));
-});
+// Human player: always subscribed so clicks are never lost
+intent$.subscribe(applyIntent);
 
-const selectKS = (table: TableState) => {
+export const selectKS = (
+  table: TableState,
+  ksList: KnowledgeSource[] = knowledgeSources,
+) => {
   const allDefended = table.attack.length === table.defense.length;
-  // Priority: defender (when there are undefended cards) > current attacker > throw-in players
+  const isAI = (ks: KnowledgeSource) => ks.playerId !== 0;
+  // Controller only drives AI. Human acts via intent$ above.
+  // Priority: AI defender > AI primary attacker > any other AI throw-in
   return (
     (!allDefended
-      ? knowledgeSources.find(
-          (ks) => ks.playerId === table.currentDefendId && ks.canAct(table),
+      ? ksList.find(
+          (ks) => isAI(ks) && ks.playerId === table.currentDefendId && ks.canAct(table),
         )
       : undefined) ??
-    knowledgeSources.find(
-      (ks) => ks.playerId === table.currentTurnId && ks.canAct(table),
+    ksList.find(
+      (ks) => isAI(ks) && ks.playerId === table.currentTurnId && ks.canAct(table),
     ) ??
-    knowledgeSources.find((ks) => ks.canAct(table))
+    ksList.find((ks) => isAI(ks) && ks.canAct(table))
   );
 };
 
-// Active controller: switchMap cancels any pending delay when state changes
+// Active controller: switchMap cancels any pending AI action when state changes
 table$
   .pipe(
     switchMap((table) => {
       if (table.isGameOver) return EMPTY;
       const selected = selectKS(table);
-      if (selected) {
-        return timer(AI_DELAY_MS).pipe(
-          map((): Intent | null => selected.propose(table$.value)),
-        );
-      }
-      // No AI can act — if the bout is fully defended, auto-pass after a pause
-      if (table.attack.length > 0 && table.attack.length === table.defense.length) {
-        const beaten: Intent = { action: "BEATEN", playerId: table.currentTurnId };
-        return timer(AUTO_PASS_MS).pipe(map((): Intent | null => beaten));
-      }
-      return EMPTY;
+      if (!selected) return EMPTY;
+      // AI KS: propose after a delay, passing the snapshot (not re-reading table$)
+      return timer(AI_DELAY_MS).pipe(
+        map((): Intent | null => selected.propose(table)),
+      );
     }),
   )
   .subscribe((intent) => {
     if (!intent) return;
-    const current = table$.value;
-    if (current.isGameOver) return;
-    applyOutcome(current, processIntent(current, intent));
+    applyIntent(intent);
   });
