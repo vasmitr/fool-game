@@ -1,6 +1,6 @@
-import { registerKS } from "./store";
-import { findBestDefense, findBestAttack } from "./helpers";
-import type { TableState, Intent } from "./rules";
+import { registerKS } from "./store.js";
+import { findBestDefense, findBestAttack } from "./helpers.js";
+import type { TableState, Intent } from "./rules.js";
 
 const validateCards = (table: TableState) => {
     return table.attack.length > 0 &&

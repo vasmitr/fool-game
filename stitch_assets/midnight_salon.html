@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Midnight Salon - Durak</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary": "#ff716c",
+              "error": "#ec7c8a",
+              "surface-container-lowest": "#000000",
+              "secondary-fixed": "#d4e5ef",
+              "surface-tint": "#bac3ff",
+              "inverse-surface": "#faf8ff",
+              "error-dim": "#b95463",
+              "tertiary-dim": "#ff716c",
+              "on-primary-container": "#c7cdff",
+              "surface-container-low": "#06122d",
+              "primary-fixed": "#dee0ff",
+              "surface-bright": "#002867",
+              "surface": "#060e20",
+              "inverse-on-surface": "#4d556b",
+              "error-container": "#7f2737",
+              "on-error": "#490013",
+              "surface-container-highest": "#00225a",
+              "tertiary-fixed": "#f94d4e",
+              "on-primary-fixed": "#27378a",
+              "on-tertiary-container": "#110000",
+              "on-surface-variant": "#91aaeb",
+              "on-tertiary-fixed": "#000000",
+              "on-secondary": "#122229",
+              "secondary": "#8fa0aa",
+              "primary-container": "#2f3f92",
+              "primary-dim": "#a8b4ff",
+              "surface-container": "#05183c",
+              "on-surface": "#dee5ff",
+              "on-tertiary": "#490006",
+              "on-secondary-container": "#b1c2cb",
+              "surface-dim": "#060e20",
+              "background": "#060e20",
+              "secondary-container": "#2e3e45",
+              "surface-container-high": "#031d4b",
+              "secondary-dim": "#8fa0aa",
+              "on-background": "#dee5ff",
+              "surface-variant": "#00225a",
+              "outline": "#5b74b1",
+              "on-secondary-fixed-variant": "#4e5e66",
+              "on-primary": "#28388b",
+              "primary": "#bac3ff",
+              "tertiary-fixed-dim": "#e74043",
+              "tertiary-container": "#f94d4e",
+              "on-primary-fixed-variant": "#4555a8",
+              "inverse-primary": "#4958ac",
+              "primary-fixed-dim": "#ccd2ff",
+              "on-tertiary-fixed-variant": "#340003",
+              "secondary-fixed-dim": "#c6d7e1",
+              "on-error-container": "#ff97a3",
+              "on-secondary-fixed": "#324249",
+              "outline-variant": "#2b4680"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .card-glow {
+            box-shadow: 0 0 20px rgba(186, 195, 255, 0.15);
+        }
+        .glass-panel {
+            backdrop-filter: blur(12px);
+        }
+        .luxury-felt {
+            background-image: radial-gradient(circle at center, #002867 0%, #060e20 100%);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body min-h-screen flex flex-col overflow-hidden">
+<!-- Top Navigation Bar -->
+<header class="bg-[#060e20] dark:bg-[#060e20] w-full top-0 px-6 py-4 bg-gradient-to-b from-[#060e20] to-transparent z-50 flex justify-between items-center">
+<div class="text-[#bac3ff] font-black tracking-widest uppercase font-['Manrope'] text-lg">
+            Midnight Salon
+        </div>
+<div class="flex items-center gap-4">
+<button class="flex items-center gap-2 px-4 py-2 rounded-full border border-outline-variant/30 bg-surface-container-low/50 text-[#bac3ff] hover:text-white hover:bg-surface-container-high/50 transition-all cursor-pointer active:scale-95 group">
+<span class="material-symbols-outlined text-xl group-hover:rotate-12 transition-transform" style="font-variation-settings: 'FILL' 0;">dark_mode</span>
+<span class="font-headline text-xs font-bold uppercase tracking-widest">Switch Theme</span>
+</button>
+</div>
+</header>
+<!-- Main Game Canvas -->
+<main class="flex-grow relative flex flex-col items-center justify-between py-8 luxury-felt">
+<!-- Opponents Area -->
+<div class="w-full max-w-6xl px-8 flex justify-between items-start pt-4">
+<!-- Opponent 1: Marie Curie -->
+<div class="flex flex-col items-center gap-2">
+<div class="relative p-1 rounded-full border-2 border-outline-variant/30">
+<img alt="Marie Curie Portrait" class="w-16 h-16 rounded-full bg-surface-container-high" data-alt="Black and white professional portrait of Marie Curie" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCTMKHL3yvxAgcROg8JBRn2wC7dhGsy-P-gxAiWMjOPNCWI4NorBO5Jzb_e-dDgBaYif3dNbt3GCP60sR67PCwx1sOVajF16BCdlNNcqj8TedyUu4IWq2ZBXjDK_qHsWi2MbPU0XhF2RdRVrgx8ccnYdclKuRExB2_2-SW0Ws8SJF7IkF41n8vRw_tRCEL4tFiD0jtolGWsq6FY9CCroJrBHccdOWjEPhiYvyWXK3_GDXu4-xQoih3bb8T9OwrA_5U-xkFDUrCtA5Ze"/>
+<div class="absolute -bottom-1 -right-1 bg-primary text-on-primary text-[10px] font-bold px-2 py-0.5 rounded-full">6</div>
+</div>
+<span class="font-headline text-sm font-bold tracking-tight text-on-surface">Marie Curie</span>
+</div>
+<!-- Opponent 2: Isaac Newton (Active) -->
+<div class="flex flex-col items-center gap-2 scale-110">
+<div class="relative p-1 rounded-full ring-4 ring-primary/40 ring-offset-4 ring-offset-surface">
+<img alt="Isaac Newton Portrait" class="w-20 h-20 rounded-full bg-surface-container-high" data-alt="Classical portrait of Isaac Newton in warm lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1C-CUze8W8kNZShTQz14qJ_J9OI2kEyG8e7qtcyE92bCNX7nfKdNHIoHJfiC7yZfzJ67cxAg0V4EhMMnXjfyL42tBC9IIVdLqgOyjVckzyRGX5KtDPA-EpP1flbymiI5_XDGaBmuuve6QzJUWct0TCoYXq5wcHwawvd0acBb1ItAZM6mS08z3U3yQdS0zN-nWLAh6pJXQ3OWhk0ERP2TvXAn_tlKoNGC2LMQFRd7cEIhwNAWgq_Xe844xX2tNfqwqKYGAykVxkBvg"/>
+<div class="absolute -bottom-1 -right-1 bg-primary text-on-primary text-xs font-bold px-2 py-0.5 rounded-full shadow-lg">4</div>
+</div>
+<div class="flex flex-col items-center">
+<span class="font-headline text-sm font-bold tracking-tight text-primary">Isaac Newton</span>
+<span class="text-[10px] uppercase tracking-tighter text-primary font-bold">Thinking...</span>
+</div>
+</div>
+<!-- Opponent 3: Nikola Tesla -->
+<div class="flex flex-col items-center gap-2">
+<div class="relative p-1 rounded-full border-2 border-outline-variant/30">
+<img alt="Nikola Tesla Portrait" class="w-16 h-16 rounded-full bg-surface-container-high" data-alt="Sepia portrait of Nikola Tesla with intense gaze" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDIUV8kP-fhct-o2UzQ0bxgK9vGzmJmKMkRjG1-uHH78VNvn1HUq2ju64IZM5QK8OpN5wENN1dDLJqszAQGm5uhJJJReOOm-7SgjetGH0LI4vJc8U6OdyckDnQN7lNhG8kAIvAyHi4rLtJYzmMdTr-Ovg_pHGMCMUx5V0Knom9aMAVnVa3QU665cB_WNuiiEOHH7XsNUDK9jv8XQ9CLIYMGX1jG29LSNEL8ZBQV0opeViywW6WmAztfuDm-dzOtEdzt2QyxE3En41A2"/>
+<div class="absolute -bottom-1 -right-1 bg-primary text-on-primary text-[10px] font-bold px-2 py-0.5 rounded-full">8</div>
+</div>
+<span class="font-headline text-sm font-bold tracking-tight text-on-surface">Nikola Tesla</span>
+</div>
+</div>
+<!-- Central Table / Playing Area -->
+<div class="relative w-full max-w-4xl h-64 border border-outline-variant/15 rounded-[3rem] flex items-center justify-center gap-4 bg-surface-container/10">
+<!-- Cards currently in play -->
+<div class="flex gap-4">
+<!-- Stacked Card Pair 1 -->
+<div class="relative w-24 h-36">
+<div class="absolute inset-0 bg-primary-fixed rounded-lg shadow-xl flex flex-col p-3 transform -rotate-3">
+<span class="text-on-primary-fixed font-headline font-bold text-xl leading-none">J</span>
+<span class="material-symbols-outlined text-tertiary self-start" style='font-variation-settings: "FILL" 1;'>favorite</span>
+</div>
+<div class="absolute inset-0 translate-x-3 translate-y-3 bg-primary-fixed rounded-lg shadow-xl flex flex-col p-3 border border-outline-variant/20 transform rotate-2">
+<span class="text-on-primary-fixed font-headline font-bold text-xl leading-none">Q</span>
+<span class="material-symbols-outlined text-tertiary self-start" style='font-variation-settings: "FILL" 1;'>favorite</span>
+</div>
+</div>
+<!-- Stacked Card Pair 2 -->
+<div class="relative w-24 h-36">
+<div class="absolute inset-0 bg-primary-fixed rounded-lg shadow-xl flex flex-col p-3 transform rotate-1">
+<span class="text-on-primary-fixed font-headline font-bold text-xl leading-none">10</span>
+<span class="material-symbols-outlined text-on-primary-fixed self-start" style='font-variation-settings: "FILL" 1;'>spa</span>
+</div>
+</div>
+</div>
+<!-- Deck and Beaten Stats (Floating Side) -->
+<div class="absolute right-[-8rem] flex flex-col gap-6">
+<div class="flex flex-col items-center">
+<div class="relative w-16 h-24 bg-surface-container-highest rounded-lg border border-outline-variant/40 shadow-2xl flex items-center justify-center">
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-18 border border-outline/20 rounded"></div>
+<span class="material-symbols-outlined text-primary-dim opacity-30 text-4xl">playing_cards</span>
+<div class="absolute -top-3 -right-3 bg-surface-bright text-primary text-xs font-black w-8 h-8 flex items-center justify-center rounded-full border border-outline-variant/50">24</div>
+</div>
+<span class="text-[10px] uppercase font-bold tracking-widest mt-2 text-on-surface-variant">Deck</span>
+</div>
+<div class="flex flex-col items-center">
+<div class="w-16 h-24 bg-surface-container-low rounded-lg border border-outline-variant/10 opacity-60 flex flex-col items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant text-3xl">delete_sweep</span>
+<span class="font-headline font-bold text-sm text-on-surface-variant">12</span>
+</div>
+<span class="text-[10px] uppercase font-bold tracking-widest mt-2 text-on-surface-variant">Pile</span>
+</div>
+</div>
+<!-- Trump Card Indicator -->
+<div class="absolute left-[-8rem] flex flex-col items-center">
+<div class="p-4 bg-primary-container/30 rounded-full border border-primary/20 backdrop-blur-md">
+<span class="material-symbols-outlined text-primary text-4xl" style='font-variation-settings: "FILL" 1;'>favorite</span>
+</div>
+<span class="text-[10px] uppercase font-bold tracking-widest mt-2 text-primary">Trump Suit</span>
+</div>
+</div>
+<!-- Integrated Game Log (Collapsible Floating Widget) -->
+<div class="absolute left-6 bottom-40 w-64 glass-panel bg-surface-container-low/40 rounded-xl p-4 border border-outline-variant/10">
+<div class="flex justify-between items-center mb-3">
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Game History</span>
+<span class="material-symbols-outlined text-sm text-on-surface-variant">unfold_less</span>
+</div>
+<div class="space-y-2 max-h-32 overflow-hidden opacity-80">
+<div class="flex gap-2 items-baseline">
+<span class="text-[9px] font-mono text-on-surface-variant">14:22</span>
+<p class="text-[11px]"><span class="text-primary font-bold">Marie</span> attacked with <span class="text-on-surface italic">6♦</span></p>
+</div>
+<div class="flex gap-2 items-baseline">
+<span class="text-[9px] font-mono text-on-surface-variant">14:23</span>
+<p class="text-[11px]"><span class="text-primary font-bold">You</span> defended with <span class="text-on-surface italic">A♦</span></p>
+</div>
+<div class="flex gap-2 items-baseline">
+<span class="text-[9px] font-mono text-on-surface-variant">14:23</span>
+<p class="text-[11px]"><span class="text-on-surface-variant italic">Turn ended (Beaten)</span></p>
+</div>
+</div>
+</div>
+<!-- Player Actions and Hand -->
+<div class="w-full flex flex-col items-center gap-8">
+<!-- Action Buttons -->
+<div class="flex gap-4">
+<button class="px-8 py-3 bg-secondary-container text-on-secondary-container rounded-full font-headline font-bold text-xs uppercase tracking-widest border border-outline-variant/20 hover:bg-secondary-dim hover:text-on-secondary transition-all active:scale-95 shadow-lg">
+                    Take Cards
+                </button>
+<button class="px-10 py-3 bg-gradient-to-r from-primary-container to-primary text-white rounded-full font-headline font-bold text-xs uppercase tracking-widest hover:brightness-110 transition-all active:scale-95 shadow-xl shadow-primary/10">
+                    Pass / End Turn
+                </button>
+</div>
+<!-- Player's Hand -->
+<div class="flex justify-center -space-x-8 px-12 h-44 items-end">
+<!-- Hand Card 1 -->
+<div class="group relative w-28 h-40 bg-primary-fixed rounded-xl shadow-2xl flex flex-col p-4 border border-outline-variant/20 transform hover:-translate-y-8 transition-all duration-300 cursor-pointer card-glow">
+<span class="text-on-primary-fixed font-headline font-black text-2xl leading-none">A</span>
+<span class="material-symbols-outlined text-tertiary text-2xl" style='font-variation-settings: "FILL" 1;'>favorite</span>
+<div class="mt-auto self-center">
+<span class="material-symbols-outlined text-tertiary text-4xl opacity-10" style='font-variation-settings: "FILL" 1;'>favorite</span>
+</div>
+</div>
+<!-- Hand Card 2 -->
+<div class="group relative w-28 h-40 bg-primary-fixed rounded-xl shadow-2xl flex flex-col p-4 border border-outline-variant/20 transform rotate-[-2deg] hover:-translate-y-8 transition-all duration-300 cursor-pointer card-glow">
+<span class="text-on-primary-fixed font-headline font-black text-2xl leading-none">K</span>
+<span class="material-symbols-outlined text-on-primary-fixed text-2xl" style='font-variation-settings: "FILL" 1;'>spa</span>
+<div class="mt-auto self-center">
+<span class="material-symbols-outlined text-on-primary-fixed text-4xl opacity-10" style='font-variation-settings: "FILL" 1;'>spa</span>
+</div>
+</div>
+<!-- Hand Card 3 -->
+<div class="group relative w-28 h-40 bg-primary-fixed rounded-xl shadow-2xl flex flex-col p-4 border border-outline-variant/20 transform rotate-[1deg] hover:-translate-y-8 transition-all duration-300 cursor-pointer card-glow">
+<span class="text-on-primary-fixed font-headline font-black text-2xl leading-none">8</span>
+<span class="material-symbols-outlined text-on-primary-fixed text-2xl" style='font-variation-settings: "FILL" 1;'>square</span>
+<div class="mt-auto self-center">
+<span class="material-symbols-outlined text-on-primary-fixed text-4xl opacity-10" style='font-variation-settings: "FILL" 1;'>square</span>
+</div>
+</div>
+<!-- Hand Card 4 -->
+<div class="group relative w-28 h-40 bg-primary-fixed rounded-xl shadow-2xl flex flex-col p-4 border border-outline-variant/20 transform rotate-[3deg] hover:-translate-y-8 transition-all duration-300 cursor-pointer card-glow ring-2 ring-primary/50">
+<span class="text-on-primary-fixed font-headline font-black text-2xl leading-none">Q</span>
+<span class="material-symbols-outlined text-tertiary text-2xl" style='font-variation-settings: "FILL" 1;'>favorite</span>
+<div class="mt-auto self-center">
+<span class="material-symbols-outlined text-tertiary text-4xl opacity-10" style='font-variation-settings: "FILL" 1;'>favorite</span>
+</div>
+</div>
+<!-- Hand Card 5 -->
+<div class="group relative w-28 h-40 bg-primary-fixed rounded-xl shadow-2xl flex flex-col p-4 border border-outline-variant/20 transform rotate-[5deg] hover:-translate-y-8 transition-all duration-300 cursor-pointer card-glow">
+<span class="text-on-primary-fixed font-headline font-black text-2xl leading-none">J</span>
+<span class="material-symbols-outlined text-on-primary-fixed text-2xl" style='font-variation-settings: "FILL" 1;'>stat_0</span>
+<div class="mt-auto self-center">
+<span class="material-symbols-outlined text-on-primary-fixed text-4xl opacity-10" style='font-variation-settings: "FILL" 1;'>stat_0</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Navigation Shell -->
+</body></html>

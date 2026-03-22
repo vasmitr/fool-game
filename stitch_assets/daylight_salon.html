@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Daylight Salon - Durak</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#4f6a96",
+              "on-primary": "#ffffff",
+              "primary-container": "#dbe2f9",
+              "on-primary-container": "#0a1d36",
+              "secondary": "#585e71",
+              "on-secondary": "#ffffff",
+              "secondary-container": "#dce2f9",
+              "on-secondary-container": "#151b2c",
+              "tertiary": "#745470",
+              "on-tertiary": "#ffffff",
+              "error": "#ba1a1a",
+              "background": "#f8fafc",
+              "on-background": "#1a1c1e",
+              "surface": "#f8fafc",
+              "on-surface": "#1a1c1e",
+              "surface-variant": "#e1e2ec",
+              "on-surface-variant": "#44474f",
+              "outline": "#74777f",
+              "outline-variant": "#c4c6d0",
+              "surface-container-low": "#f1f3f9",
+              "surface-container": "#eceef4",
+              "surface-container-high": "#e6e8ee",
+              "surface-container-highest": "#e0e2e8",
+              "surface-bright": "#f8fafc",
+              "surface-dim": "#d9dadd",
+              "indigo-accent": "#6366f1",
+              "slate-accent": "#475569"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .card-glow {
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08);
+        }
+        .glass-panel {
+            backdrop-filter: blur(12px);
+        }
+        .airy-felt {
+            background-image: radial-gradient(circle at center, #f1f5f9 0%, #f8fafc 100%);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body min-h-screen flex flex-col">
+<!-- Top Navigation Bar -->
+<header class="bg-slate-50/80 backdrop-blur-xl w-full top-0 px-6 py-4 fixed z-50 flex justify-between items-center shadow-sm border-b border-slate-200/50">
+<div class="text-indigo-700 font-bold tracking-tight font-headline text-2xl">
+            Daylight Salon
+        </div>
+<div class="flex items-center">
+<button class="flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-full transition-all active:scale-95 shadow-sm group" onclick="document.documentElement.classList.toggle('dark')">
+<span class="material-symbols-outlined text-indigo-600 group-hover:rotate-12 transition-transform duration-300" style="font-variation-settings: 'FILL' 1;">dark_mode</span>
+<span class="font-headline text-xs font-bold uppercase tracking-wider text-slate-700">Switch Theme</span>
+</button>
+</div>
+</header>
+<!-- Main Game Canvas -->
+<main class="flex-grow relative flex flex-col items-center justify-between airy-felt pt-24 pb-12">
+<!-- Opponents Area -->
+<div class="w-full max-w-6xl px-8 flex justify-between items-start pt-4">
+<!-- Opponent 1: Marie Curie -->
+<div class="flex flex-col items-center gap-2">
+<div class="relative p-1 rounded-full border-2 border-slate-200">
+<img alt="Marie Curie Portrait" class="w-16 h-16 rounded-full bg-slate-100" data-alt="Black and white professional portrait of Marie Curie" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCTMKHL3yvxAgcROg8JBRn2wC7dhGsy-P-gxAiWMjOPNCWI4NorBO5Jzb_e-dDgBaYif3dNbt3GCP60sR67PCwx1sOVajF16BCdlNNcqj8TedyUu4IWq2ZBXjDK_qHsWi2MbPU0XhF2RdRVrgx8ccnYdclKuRExB2_2-SW0Ws8SJF7IkF41n8vRw_tRCEL4tFiD0jtolGWsq6FY9CCroJrBHccdOWjEPhiYvyWXK3_GDXu4-xQoih3bb8T9OwrA_5U-xkFDUrCtA5Ze"/>
+<div class="absolute -bottom-1 -right-1 bg-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">6</div>
+</div>
+<span class="font-headline text-sm font-bold tracking-tight text-slate-700">Marie Curie</span>
+</div>
+<!-- Opponent 2: Isaac Newton (Active) -->
+<div class="flex flex-col items-center gap-2 scale-110">
+<div class="relative p-1 rounded-full ring-4 ring-indigo-500/20 ring-offset-4 ring-offset-background">
+<img alt="Isaac Newton Portrait" class="w-20 h-20 rounded-full bg-slate-100" data-alt="Classical portrait of Isaac Newton in warm lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1C-CUze8W8kNZShTQz14qJ_J9OI2kEyG8e7qtcyE92bCNX7nfKdNHIoHJfiC7yZfzJ67cxAg0V4EhMMnXjfyL42tBC9IIVdLqgOyjVckzyRGX5KtDPA-EpP1flbymiI5_XDGaBmuuve6QzJUWct0TCoYXq5wcHwawvd0acBb1ItAZM6mS08z3U3yQdS0zN-nWLAh6pJXQ3OWhk0ERP2TvXAn_tlKoNGC2LMQFRd7cEIhwNAWgq_Xe844xX2tNfqwqKYGAykVxkBvg"/>
+<div class="absolute -bottom-1 -right-1 bg-indigo-600 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-md">4</div>
+</div>
+<div class="flex flex-col items-center">
+<span class="font-headline text-sm font-bold tracking-tight text-indigo-700">Isaac Newton</span>
+<span class="text-[10px] uppercase tracking-tighter text-indigo-600 font-bold">Thinking...</span>
+</div>
+</div>
+<!-- Opponent 3: Nikola Tesla -->
+<div class="flex flex-col items-center gap-2">
+<div class="relative p-1 rounded-full border-2 border-slate-200">
+<img alt="Nikola Tesla Portrait" class="w-16 h-16 rounded-full bg-slate-100" data-alt="Sepia portrait of Nikola Tesla with intense gaze" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDIUV8kP-fhct-o2UzQ0bxgK9vGzmJmKMkRjG1-uHH78VNvn1HUq2ju64IZM5QK8OpN5wENN1dDLJqszAQGm5uhJJJReOOm-7SgjetGH0LI4vJc8U6OdyckDnQN7lNhG8kAIvAyHi4rLtJYzmMdTr-Ovg_pHGMCMUx5V0Knom9aMAVnVa3QU665cB_WNuiiEOHH7XsNUDK9jv8XQ9CLIYMGX1jG29LSNEL8ZBQV0opeViywW6WmAztfuDm-dzOtEdzt2QyxE3En41A2"/>
+<div class="absolute -bottom-1 -right-1 bg-indigo-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">8</div>
+</div>
+<span class="font-headline text-sm font-bold tracking-tight text-slate-700">Nikola Tesla</span>
+</div>
+</div>
+<!-- Central Table / Playing Area -->
+<div class="relative w-full max-w-4xl h-64 border border-slate-200 rounded-[3rem] flex items-center justify-center gap-4 bg-white/40 shadow-sm">
+<!-- Cards currently in play -->
+<div class="flex gap-4">
+<!-- Stacked Card Pair 1 -->
+<div class="relative w-24 h-36">
+<div class="absolute inset-0 bg-white rounded-lg shadow-md border border-slate-100 flex flex-col p-3 transform -rotate-3">
+<span class="text-slate-800 font-headline font-bold text-xl leading-none">J</span>
+<span class="material-symbols-outlined text-rose-500 self-start" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</div>
+<div class="absolute inset-0 translate-x-3 translate-y-3 bg-white rounded-lg shadow-md flex flex-col p-3 border border-slate-100 transform rotate-2">
+<span class="text-slate-800 font-headline font-bold text-xl leading-none">Q</span>
+<span class="material-symbols-outlined text-rose-500 self-start" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</div>
+</div>
+<!-- Stacked Card Pair 2 -->
+<div class="relative w-24 h-36">
+<div class="absolute inset-0 bg-white rounded-lg shadow-md flex flex-col p-3 border border-slate-100 transform rotate-1">
+<span class="text-slate-800 font-headline font-bold text-xl leading-none">10</span>
+<span class="material-symbols-outlined text-indigo-700 self-start" style="font-variation-settings: 'FILL' 1;">spa</span>
+</div>
+</div>
+</div>
+<!-- Deck and Beaten Stats (Floating Side) -->
+<div class="absolute right-[-8rem] flex flex-col gap-6">
+<div class="flex flex-col items-center">
+<div class="relative w-16 h-24 bg-white rounded-lg border border-slate-200 shadow-sm flex items-center justify-center">
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-18 border border-slate-100 rounded"></div>
+<span class="material-symbols-outlined text-indigo-300 text-4xl">playing_cards</span>
+<div class="absolute -top-3 -right-3 bg-indigo-600 text-white text-xs font-black w-8 h-8 flex items-center justify-center rounded-full border-2 border-white shadow-sm">24</div>
+</div>
+<span class="text-[10px] uppercase font-bold tracking-widest mt-2 text-slate-500">Deck</span>
+</div>
+<div class="flex flex-col items-center">
+<div class="w-16 h-24 bg-slate-50 rounded-lg border border-slate-200 opacity-60 flex flex-col items-center justify-center">
+<span class="material-symbols-outlined text-slate-400 text-3xl">delete_sweep</span>
+<span class="font-headline font-bold text-sm text-slate-500">12</span>
+</div>
+<span class="text-[10px] uppercase font-bold tracking-widest mt-2 text-slate-500">Pile</span>
+</div>
+</div>
+<!-- Trump Card Indicator -->
+<div class="absolute left-[-8rem] flex flex-col items-center">
+<div class="p-4 bg-indigo-50 rounded-full border border-indigo-100 backdrop-blur-md">
+<span class="material-symbols-outlined text-indigo-600 text-4xl" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</div>
+<span class="text-[10px] uppercase font-bold tracking-widest mt-2 text-indigo-700">Trump Suit</span>
+</div>
+</div>
+<!-- Integrated Game Log (Collapsible Floating Widget) -->
+<div class="absolute left-6 bottom-40 w-64 glass-panel bg-white/60 rounded-xl p-4 border border-slate-200/50 shadow-sm">
+<div class="flex justify-between items-center mb-3">
+<span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Game History</span>
+<span class="material-symbols-outlined text-sm text-slate-400">unfold_less</span>
+</div>
+<div class="space-y-2 max-h-32 overflow-hidden">
+<div class="flex gap-2 items-baseline">
+<span class="text-[9px] font-mono text-slate-400">14:22</span>
+<p class="text-[11px] text-slate-600"><span class="text-indigo-600 font-bold">Marie</span> attacked with <span class="text-slate-900 italic">6♦</span></p>
+</div>
+<div class="flex gap-2 items-baseline">
+<span class="text-[9px] font-mono text-slate-400">14:23</span>
+<p class="text-[11px] text-slate-600"><span class="text-indigo-600 font-bold">You</span> defended with <span class="text-slate-900 italic">A♦</span></p>
+</div>
+<div class="flex gap-2 items-baseline">
+<span class="text-[9px] font-mono text-slate-400">14:23</span>
+<p class="text-[11px] text-slate-400 italic">Turn ended (Beaten)</p>
+</div>
+</div>
+</div>
+<!-- Player Actions and Hand -->
+<div class="w-full flex flex-col items-center gap-8">
+<!-- Action Buttons -->
+<div class="flex gap-4">
+<button class="px-8 py-3 bg-slate-100 text-slate-700 rounded-full font-headline font-bold text-xs uppercase tracking-widest border border-slate-200 hover:bg-slate-200 transition-all active:scale-95 shadow-sm">
+                    Take Cards
+                </button>
+<button class="px-10 py-3 bg-indigo-600 text-white rounded-full font-headline font-bold text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all active:scale-95 shadow-md shadow-indigo-200">
+                    Pass / End Turn
+                </button>
+</div>
+<!-- Player's Hand -->
+<div class="flex justify-center -space-x-8 px-12 h-44 items-end">
+<!-- Hand Card 1 -->
+<div class="group relative w-28 h-40 bg-white rounded-xl shadow-lg flex flex-col p-4 border border-slate-100 transform hover:-translate-y-8 transition-all duration-300 cursor-pointer card-glow">
+<span class="text-slate-900 font-headline font-black text-2xl leading-none">A</span>
+<span class="material-symbols-outlined text-rose-500 text-2xl" style="font-variation-settings: 'FILL' 1;">favorite</span>
+<div class="mt-auto self-center">
+<span class="material-symbols-outlined text-rose-500 text-4xl opacity-5" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</div>
+</div>
+<!-- Hand Card 2 -->
+<div class="group relative w-28 h-40 bg-white rounded-xl shadow-lg flex flex-col p-4 border border-slate-100 transform rotate-[-2deg] hover:-translate-y-8 transition-all duration-300 cursor-pointer card-glow">
+<span class="text-slate-900 font-headline font-black text-2xl leading-none">K</span>
+<span class="material-symbols-outlined text-indigo-700 text-2xl" style="font-variation-settings: 'FILL' 1;">spa</span>
+<div class="mt-auto self-center">
+<span class="material-symbols-outlined text-indigo-700 text-4xl opacity-5" style="font-variation-settings: 'FILL' 1;">spa</span>
+</div>
+</div>
+<!-- Hand Card 3 -->
+<div class="group relative w-28 h-40 bg-white rounded-xl shadow-lg flex flex-col p-4 border border-slate-100 transform rotate-[1deg] hover:-translate-y-8 transition-all duration-300 cursor-pointer card-glow">
+<span class="text-slate-900 font-headline font-black text-2xl leading-none">8</span>
+<span class="material-symbols-outlined text-slate-800 text-2xl" style="font-variation-settings: 'FILL' 1;">square</span>
+<div class="mt-auto self-center">
+<span class="material-symbols-outlined text-slate-800 text-4xl opacity-5" style="font-variation-settings: 'FILL' 1;">square</span>
+</div>
+</div>
+<!-- Hand Card 4 -->
+<div class="group relative w-28 h-40 bg-white rounded-xl shadow-lg flex flex-col p-4 border border-slate-100 transform rotate-[3deg] hover:-translate-y-8 transition-all duration-300 cursor-pointer card-glow ring-2 ring-indigo-500/30">
+<span class="text-slate-900 font-headline font-black text-2xl leading-none">Q</span>
+<span class="material-symbols-outlined text-rose-500 text-2xl" style="font-variation-settings: 'FILL' 1;">favorite</span>
+<div class="mt-auto self-center">
+<span class="material-symbols-outlined text-rose-500 text-4xl opacity-5" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</div>
+</div>
+<!-- Hand Card 5 -->
+<div class="group relative w-28 h-40 bg-white rounded-xl shadow-lg flex flex-col p-4 border border-slate-100 transform rotate-[5deg] hover:-translate-y-8 transition-all duration-300 cursor-pointer card-glow">
+<span class="text-slate-900 font-headline font-black text-2xl leading-none">J</span>
+<span class="material-symbols-outlined text-slate-800 text-2xl" style="font-variation-settings: 'FILL' 1;">stat_0</span>
+<div class="mt-auto self-center">
+<span class="material-symbols-outlined text-slate-800 text-4xl opacity-5" style="font-variation-settings: 'FILL' 1;">stat_0</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

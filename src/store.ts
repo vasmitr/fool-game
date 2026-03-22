@@ -1,7 +1,7 @@
 import { BehaviorSubject, Subject } from "rxjs";
-import { getDeck } from "./helpers";
-import type { Card } from "./consts";
-import type { Intent, TableState, ActionOutcome } from "./rules";
+import { getDeck } from "./helpers.js";
+import type { Card } from "./consts.js";
+import type { Intent, TableState, ActionOutcome } from "./rules.js";
 
 function getInitialState(): TableState {
   const deckForHands = getDeck();

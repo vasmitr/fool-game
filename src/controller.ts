@@ -1,10 +1,10 @@
 import { EMPTY, timer } from "rxjs";
 import { switchMap, map } from "rxjs";
-import { table$, intent$, knowledgeSources, applyOutcome } from "./store";
-import type { KnowledgeSource } from "./store";
-import type { TableState, Intent } from "./rules";
-import { processIntent } from "./rules";
-import { AI_DELAY_MS } from "./consts";
+import { table$, intent$, knowledgeSources, applyOutcome } from "./store.js";
+import type { KnowledgeSource } from "./store.js";
+import type { TableState, Intent } from "./rules.js";
+import { processIntent } from "./rules.js";
+import { AI_DELAY_MS } from "./consts.js";
 
 const applyIntent = (intent: Intent) => {
   const current = table$.value;

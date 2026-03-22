@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+@theme {
+  --font-headline: "Manrope", sans-serif;
+  --font-body: "Inter", sans-serif;
+
+  /* --- GLOBAL THEME VARIABLES --- */
+  
+  /* Midnight Salon (Rich Royal Blue) */
+  --color-felt-center: #0a2472;
+  --color-felt-edge: #00072d;
+  
+  --color-on-surface: #f0f3ff;
+  --color-on-surface-variant: #bac3ff;
+  
+  --color-surface-container-low: #0c255a;
+  --color-surface-container-high: #143675;
+  
+  --color-primary: #bac3ff;
+  --color-on-primary: #121433;
+  --color-primary-container: #1e3a8a;
+  --color-on-primary-container: #ffffff;
+  
+  --color-secondary-container: #334155;
+  --color-on-secondary-container: #f1f5f9;
+  
+  --color-outline-variant: rgba(186, 195, 255, 0.3);
+  --color-error: #ff4d6d;
+  
+  --color-glass-bg: rgba(10, 27, 65, 0.7);
+}
+
+/* Daylight Salon (Neutral Slate & Royal Purple) */
+[data-theme='daylight'] {
+  --color-felt-center: #f1f5f9; /* Original Stitch Slate Center */
+  --color-felt-edge: #f8fafc; /* Original Stitch Slate Edge */
+  
+  --color-on-surface: #1a1c1e; /* Crisp Neutral Text */
+  --color-on-surface-variant: #4338ca;
+  
+  --color-surface-container-low: #ffffff;
+  --color-surface-container-high: #f1f3f9;
+  
+  --color-primary: #4338ca; /* RICH ROYAL PURPLE / INDIGO */
+  --color-on-primary: #ffffff;
+  
+  --color-primary-container: #e0e7ff;
+  --color-on-primary-container: #312e81;
+  
+  --color-secondary-container: #f1f3f4;
+  --color-on-secondary-container: #312e81;
+  
+  --color-outline-variant: #cbd5e1; /* Neutral Slate Outline */
+  --color-error: #ba1a1a;
+  
+  --color-glass-bg: rgba(255, 255, 255, 0.85);
+}
+
+@layer base {
+  body {
+    @apply transition-colors duration-500 m-0 p-0 overflow-hidden h-screen font-body;
+    color: var(--color-on-surface);
+    background: var(--color-felt-edge);
+  }
+}
+
+.luxury-felt {
+  background-image: radial-gradient(circle at center, var(--color-felt-center) 0%, var(--color-felt-edge) 100%);
+}
+
+.glass-panel {
+  backdrop-filter: blur(24px);
+  background: var(--color-glass-bg);
+  border: 1px solid var(--color-outline-variant);
+  @apply rounded-2xl;
+}
+
+.card-glow {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+}
+
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
