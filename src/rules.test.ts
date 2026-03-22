@@ -71,7 +71,7 @@ describe("Durak Rules Engine", () => {
     const outcome = rules.processIntent(state, intent);
     expect(outcome.type).toBe("GAME_OVER");
     if (outcome.type === "GAME_OVER") {
-        expect(outcome.winner).toBe("P2");
+        expect(outcome.table.winner).toBe("P2");
     }
   });
 

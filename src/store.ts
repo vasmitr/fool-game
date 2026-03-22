@@ -7,12 +7,12 @@ function getInitialState(): TableState {
   const deckForHands = getDeck();
   const hands = [0, 1, 2, 3].map((id) => ({
     playerId: id,
-    cards: deckForHands.splice(0, 6) as Card[], // Removes cards from deckForHands
+    cards: deckForHands.splice(0, 6) as Card[] // Removes cards from deckForHands
   }));
 
   // Use pop() to get the trump card and remove it from the deck.
   // Provide a fallback if the deck is empty.
-  const trumpCard = deckForHands.pop() || getDeck()[0]!; 
+  const trumpCard = deckForHands.pop() || getDeck()[0]!;
   const trumps = trumpCard;
 
   return {
@@ -24,14 +24,14 @@ function getInitialState(): TableState {
       { id: 0, name: "Albert Einstein" },
       { id: 1, name: "Marie Curie" },
       { id: 2, name: "Isaac Newton" },
-      { id: 3, name: "Nikola Tesla" },
+      { id: 3, name: "Nikola Tesla" }
     ],
     hands,
     attack: [] as Card[],
     defense: [] as Card[],
     discardPile: [] as Card[],
     isGameOver: false,
-    winner: null as string | null,
+    winner: null as string | null
   };
 }
 
@@ -47,18 +47,6 @@ export function resetGame() {
 
 // --- Write API ---
 export function applyOutcome(table: TableState, outcome: ActionOutcome): void {
-  if (outcome.type === "GAME_OVER") {
-    log$.next(`🏆 GAME OVER! ${outcome.winner} Wins!`);
-    const next = structuredClone(table);
-    next.isGameOver = true;
-    next.winner = outcome.winner;
-    table$.next(next);
-    return;
-  }
-  if (outcome.type === "ERROR") {
-    log$.next(outcome.log);
-    return;
-  }
   log$.next(outcome.log);
   table$.next(outcome.table);
 }

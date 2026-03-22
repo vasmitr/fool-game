@@ -2,6 +2,11 @@ import { registerKS } from "./store";
 import { findBestDefense, findBestAttack } from "./helpers";
 import type { TableState, Intent } from "./rules";
 
+const validateCards = (table: TableState) => {
+    return table.attack.length > 0 &&
+	table.attack.length === table.defense.length
+};
+
 const canAct = (playerId: number) => (table: TableState): boolean => {
   if (table.isGameOver) return false;
   const isMyTurnToDefend = table.currentDefendId === playerId;
@@ -13,9 +18,7 @@ const canAct = (playerId: number) => (table: TableState): boolean => {
   if (isMyTurnToDefend) return table.attack.length > table.defense.length;
   // Primary attacker can always end the bout (BEATEN) once all attacks are defended
   if (
-    isMyTurnToAttack &&
-    table.attack.length > 0 &&
-    table.attack.length === table.defense.length
+    isMyTurnToAttack && validateCards(table)
   ) {
     return true;
   }
