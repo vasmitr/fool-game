@@ -355,7 +355,7 @@ export function processIntent(
   table: TableState,
   intent: Intent
 ): ActionOutcome {
-  const clone: TableState = JSON.parse(JSON.stringify(table));
+  const clone: TableState = structuredClone(table);
   let result: ActionOutcome;
 
   switch (intent.action) {

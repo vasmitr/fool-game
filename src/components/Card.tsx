@@ -1,11 +1,15 @@
-import { onMount, createEffect, splitProps, Show } from 'solid-js';
+import { onMount, onCleanup, createEffect, splitProps, Show } from 'solid-js';
 import gsap from 'gsap';
 import type { Card as CardType } from '../consts.js';
+
+// Global registry to track card positions across mounting/unmounting
+const cardRegistry = new Map<string, DOMRect>();
 
 interface CardProps {
   card: CardType;
   onClick?: (card: CardType) => void;
   isBack?: boolean;
+  from?: 'bottom' | 'top' | 'hand' | 'deck' | number; // ID of player who threw it
 }
 
 const getSuitSymbol = (suit: string) => {
@@ -23,13 +27,51 @@ export function Card(props: CardProps) {
 
   onMount(() => {
     if (cardRef) {
-      gsap.from(cardRef, {
-        scale: 0.5,
-        opacity: 0,
-        y: 40,
-        duration: 0.5,
-        ease: "back.out(2.5)",
+      const id = props.card.id;
+      const lastRect = cardRegistry.get(id);
+      
+      // Delay to next frame to ensure browser layout is ready
+      requestAnimationFrame(() => {
+        if (!cardRef) return;
+        
+        if (lastRect) {
+            const currentRect = cardRef.getBoundingClientRect();
+            const deltaX = lastRect.left - currentRect.left;
+            const deltaY = lastRect.top - currentRect.top;
+
+            gsap.from(cardRef, {
+              x: deltaX,
+              y: deltaY,
+              rotation: (Math.random() - 0.5) * 60,
+              scale: 0.8,
+              duration: 0.8,
+              ease: "power2.out",
+              clearProps: "all"
+            });
+            
+            cardRegistry.delete(id);
+        } else {
+            gsap.from(cardRef, {
+              scale: 0.2,
+              opacity: 0,
+              y: 400,
+              rotation: 90,
+              duration: 0.6,
+              ease: "back.out(1.7)"
+            });
+        }
       });
+    }
+  });
+
+  onCleanup(() => {
+    if (cardRef && props.card) {
+      // Store current position before being unmounted
+      cardRegistry.set(props.card.id, cardRef.getBoundingClientRect());
+      
+      // Auto-cleanup after a short delay if not re-mounted
+      const id = props.card.id;
+      setTimeout(() => cardRegistry.delete(id), 1000);
     }
   });
 

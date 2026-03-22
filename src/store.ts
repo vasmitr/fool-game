@@ -38,7 +38,7 @@ function getInitialState(): TableState {
 // --- Blackboard ---
 export const table$ = new BehaviorSubject<TableState>(getInitialState());
 export const intent$ = new Subject<Intent>(); // human player input
-export const log$ = new Subject<string>();
+export const log$ = new BehaviorSubject<string>("Welcome to the table."); // start with message
 
 export function resetGame() {
   table$.next(getInitialState());

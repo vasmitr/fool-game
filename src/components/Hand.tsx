@@ -23,12 +23,12 @@ export function Hand(props: HandProps) {
       <For each={props.cards}>
         {(card, i) => (
           <div 
-            class="transform transition-all duration-500 origin-bottom"
+            class="transform origin-bottom"
             style={{
               "transform": `rotate(${(i() - (props.cards.length / 2)) * 3}deg) translateY(${Math.abs(i() - (props.cards.length / 2)) * 2}px)`
             }}
           >
-            <Card card={card} onClick={onHumanCardClick} />
+            <Card card={card} onClick={onHumanCardClick} from="hand" />
           </div>
         )}
       </For>
