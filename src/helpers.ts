@@ -27,6 +27,7 @@ export function findBestDefense(
   if (indexToDefend >= attackCards.length) return null;
 
   const cardToDefend = attackCards[indexToDefend];
+  if (!cardToDefend) return null;
 
   const validDefenses = playerCards.filter(
     (c) =>
@@ -47,7 +48,10 @@ export function findBestDefense(
     (c) => c.rank === cardToDefend.rank,
   );
   if (sameRankCards.length > 0 && defenseCards.length === 0) {
-    return { action: "PASS", cardId: sameRankCards[0].id };
+    const passCard = sameRankCards[0];
+    if (passCard) {
+      return { action: "PASS", cardId: passCard.id };
+    }
   }
 
   return { action: "TAKE", cardId: cardToDefend.id };
@@ -97,7 +101,7 @@ export function refillHands(
   hands: { playerId: number; cards: Card[] }[],
   deck: Card[],
 ) {
-  const newHands = hands.map((h) => ({ ...h, cards: [...h.cards] }));
+  const newHands = hands.map((h) => ({ playerId: h.playerId, cards: [...h.cards] }));
   const newDeck = [...deck];
 
   // Refill starting from anyone who has less than 6 cards
@@ -105,7 +109,10 @@ export function refillHands(
   // but here we just ensure everyone gets their 6.
   newHands.forEach((hand) => {
     while (hand.cards.length < 6 && newDeck.length > 0) {
-      hand.cards.push(newDeck.shift()!);
+      const card = newDeck.shift();
+      if (card) {
+        hand.cards.push(card);
+      }
     }
   });
 

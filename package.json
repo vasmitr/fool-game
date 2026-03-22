@@ -6,7 +6,9 @@
   "scripts": {
     "test": "vitest run",
     "dev": "tsx src/index.ts",
-    "start": "vite"
+    "start": "vite",
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",

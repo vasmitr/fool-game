@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { TableState, processIntent, Hand } from "./rules";
+import { TableState, processIntent, Hand, Intent } from "./rules";
 import { getDeck } from "./helpers";
 import { Card, Rank, suits } from "./consts";
 
@@ -54,7 +54,7 @@ describe("Game Integrity Tests", () => {
 
   it("should maintain integrity after initial deal", () => {
     const deck = getDeck();
-    const trumps = deck[deck.length - 1];
+    const trumps = deck[deck.length - 1]!;
     const players = [
         { id: 0, name: "Player 1" },
         { id: 1, name: "Player 2" }
@@ -82,7 +82,7 @@ describe("Game Integrity Tests", () => {
 
   it("should maintain integrity through various game actions", () => {
     const deck = getDeck();
-    const trumps = deck[deck.length - 1];
+    const trumps = deck[deck.length - 1]!;
     const players = [{ id: 0, name: "P1" }, { id: 1, name: "P2" }];
     
     let table: TableState = {
@@ -105,7 +105,8 @@ describe("Game Integrity Tests", () => {
     checkIntegrity(table);
 
     // 1. Attack
-    const cardToAttack = table.hands[0].cards[0];
+    const cardToAttack = table.hands[0]?.cards[0];
+    if (!cardToAttack) throw new Error("No card to attack");
     const outcome1 = processIntent(table, { action: "ATTACK", playerId: 0, cardId: cardToAttack.id });
     expect(outcome1.type).toBe("SUCCESS");
     if (outcome1.type === "SUCCESS") {
@@ -120,7 +121,8 @@ describe("Game Integrity Tests", () => {
     let tableAfterDefend: TableState | null = null;
     
     for (const attackerCard of table.attack) {
-        const defenderCards = table.hands[1].cards;
+        const defenderCards = table.hands[1]?.cards;
+        if (!defenderCards) continue;
         const defenseCard = defenderCards.find(c => 
             (c.suit === attackerCard.suit && c.value > attackerCard.value) || 
             (c.suit === trumpsSuit && attackerCard.suit !== trumpsSuit)
@@ -142,25 +144,25 @@ describe("Game Integrity Tests", () => {
         const attackCount = tableAfterDefend.attack.length;
         const defenseCount = tableAfterDefend.defense.length;
         
-        table = tableAfterDefend;
+        const currentTable: TableState = tableAfterDefend;
         // 3. Beaten (triggers refill)
-        const outcome3 = processIntent(table, { action: "BEATEN", playerId: 0 });
+        const outcome3 = processIntent(currentTable, { action: "BEATEN", playerId: 0 });
         expect(outcome3.type).toBe("SUCCESS");
         if (outcome3.type === "SUCCESS") {
             const nextTable = outcome3.table;
             checkIntegrity(nextTable);
-            checkNoIllegalTransfers(table, nextTable);
+            checkNoIllegalTransfers(currentTable, nextTable);
             
             // Verify beaten count
             expect(nextTable.discardPile.length).toBe(prevBeatenCount + attackCount + defenseCount);
-            table = nextTable;
+            // We don't need to reassign table here if it's not used again
         }
     }
   });
 
   it("should correctly increment beaten count with multiple cards in a bout", () => {
       const deck = getDeck();
-      const trumps = deck[deck.length - 1];
+      const trumps = deck[deck.length - 1]!;
       const players = [{ id: 0, name: "P1" }, { id: 1, name: "P2" }];
       // Pick a non-trump suit for attack
       const trumpsSuit = trumps.suit;
@@ -194,7 +196,7 @@ describe("Game Integrity Tests", () => {
           winner: null
       };
 
-      const step = (t: TableState, intent: any) => {
+      const step = (t: TableState, intent: Intent) => {
           const outcome = processIntent(t, intent);
           if (outcome.type !== "SUCCESS") throw new Error(`Step failed: ${outcome.type === "ERROR" ? outcome.log : "GAME_OVER"}`);
           return outcome.table;
@@ -225,9 +227,9 @@ describe("Game Integrity Tests", () => {
       const deck = getDeck();
       const players = [{ id: 0, name: "P1" }, { id: 1, name: "P2" }, { id: 2, name: "P3" }];
       
-      const a1 = deck.find(c => c.rank === "6" && c.suit !== deck[deck.length-1].suit)!;
+      const a1 = deck.find(c => c.rank === "6" && c.suit !== deck[deck.length-1]!.suit)!;
       const d1 = deck.find(c => c.rank === "7" && c.suit === a1.suit)!;
-      const a2 = deck.find(c => c.rank === "7" && c.id !== d1.id && c.suit !== deck[deck.length-1].suit)!; // another 7
+      const a2 = deck.find(c => c.rank === "7" && c.id !== d1.id && c.suit !== deck[deck.length-1]!.suit)!; // another 7
       const d2 = deck.find(c => c.rank === "8" && c.suit === a2.suit)!;
 
       const specialIds = new Set([a1.id, a2.id, d1.id, d2.id]);
@@ -235,7 +237,7 @@ describe("Game Integrity Tests", () => {
 
       let table: TableState = {
           deck: otherCards.slice(14),
-          trumps: deck[deck.length - 1],
+          trumps: deck[deck.length - 1]!,
           players,
           hands: [
               { playerId: 0, cards: [a1, ...otherCards.slice(0, 5)] } as Hand,
@@ -254,7 +256,7 @@ describe("Game Integrity Tests", () => {
       // Fix deck reference
       table.deck = otherCards.slice(14);
 
-      const step = (t: TableState, intent: any) => {
+      const step = (t: TableState, intent: Intent) => {
           const outcome = processIntent(t, intent);
           if (outcome.type !== "SUCCESS") throw new Error(`Step failed: ${outcome.type === "ERROR" ? outcome.log : "GAME_OVER"}`);
           return outcome.table;
@@ -293,7 +295,7 @@ describe("Game Integrity Tests", () => {
 
     let table: TableState = {
         deck: otherCards.slice(5),
-        trumps: deck[deck.length - 1],
+        trumps: deck[deck.length - 1]!,
         players,
         hands: [
             { playerId: 0, cards: [attackCard] } as Hand,
@@ -338,9 +340,9 @@ describe("Game Integrity Tests", () => {
       const deck = getDeck();
       const players = [{ id: 0, name: "P1" }, { id: 1, name: "P2" }];
       
-      let table: TableState = {
+      const table: TableState = {
           deck: deck.slice(12),
-          trumps: deck[deck.length - 1],
+          trumps: deck[deck.length - 1]!,
           players,
           hands: [
               { playerId: 0, cards: deck.slice(0, 6) } as Hand,
@@ -356,7 +358,8 @@ describe("Game Integrity Tests", () => {
       };
 
       // P1 attacks
-      const cardId = table.hands[0].cards[0].id;
+      const cardId = table.hands[0]?.cards[0]?.id;
+      if (!cardId) throw new Error("No card to attack");
       const o1 = processIntent(table, { action: "ATTACK", playerId: 0, cardId });
       if (o1.type === "SUCCESS") {
           const midTable = o1.table;

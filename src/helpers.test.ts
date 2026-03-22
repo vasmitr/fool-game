@@ -217,7 +217,7 @@ describe("advanced rules", () => {
         { id: "d6", rank: "J", suit: "clubs", value: 11 },
     ];
     const result = refillHands(hands, deck);
-    expect(result.hands[0].cards.length).toBe(6);
+    expect(result.hands[0]?.cards.length).toBe(6);
     expect(result.deck.length).toBe(1);
   });
 });

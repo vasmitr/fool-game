@@ -62,19 +62,27 @@ const refillPlayerHand = (deck: Card[], hand: Card[]): { deck: Card[], hand: Car
 const refillHands = (table: TableState, startingPlayerId: number): TableState => {
   // Ordered player ids starting from startingPlayerId
   const startIndex = table.players.findIndex(p => p.id === startingPlayerId);
+  if (startIndex === -1) return table;
+
   const playerOrderIds = Array.from({ length: table.players.length }, (_, i) => {
       const idx = (startIndex + i) % table.players.length;
-      return table.players[idx].id;
-  });
+      const p = table.players[idx];
+      return p ? p.id : -1;
+  }).filter(id => id !== -1);
 
   let currentDeck = [...table.deck].reverse(); // Draw from "top" (end of deck array)
-  let currentHands = [...table.hands];
+  const currentHands = [...table.hands];
 
   for (const pid of playerOrderIds) {
     const hIdx = currentHands.findIndex(h => h.playerId === pid);
-    const { deck, hand } = refillPlayerHand(currentDeck, currentHands[hIdx].cards);
+    if (hIdx === -1) continue;
+    
+    const existingHand = currentHands[hIdx];
+    if (!existingHand) continue;
+
+    const { deck, hand } = refillPlayerHand(currentDeck, existingHand.cards);
     currentDeck = deck;
-    currentHands[hIdx] = { ...currentHands[hIdx], cards: hand };
+    currentHands[hIdx] = { ...existingHand, cards: hand };
   }
 
   return { ...table, deck: currentDeck.reverse(), hands: currentHands };
@@ -167,10 +175,22 @@ const handleTake = (table: TableState, playerId: number): ActionOutcome => {
   
   const allCards = [...table.attack, ...table.defense];
   const postTake = updateHand(playerId, cards => [...cards, ...allCards])(table);
-  const nextAttacker = (table.currentDefendId + 1) % table.players.length;
   
+  const defenderIndex = table.players.findIndex(p => p.id === table.currentDefendId);
+  const nextAttackerIndex = (defenderIndex + 1) % table.players.length;
+  const nextAttacker = table.players[nextAttackerIndex];
+  if (!nextAttacker) return { type: 'ERROR', log: '🚫 Next attacker not found.' };
+
+  const nextDefenderIndex = (nextAttackerIndex + 1) % table.players.length;
+  const nextDefender = table.players[nextDefenderIndex];
+  if (!nextDefender) return { type: 'ERROR', log: '🚫 Next defender not found.' };
+
   const nextState = refillHands({ 
-    ...postTake, attack: [], defense: [], currentTurnId: nextAttacker, currentDefendId: (nextAttacker + 1) % table.players.length 
+    ...postTake, 
+    attack: [], 
+    defense: [], 
+    currentTurnId: nextAttacker.id, 
+    currentDefendId: nextDefender.id 
   }, table.currentTurnId);
   
   return { type: 'SUCCESS', table: nextState, log: `📥 ${table.players.find(p => p.id === playerId)?.name} takes all cards.` };
@@ -180,14 +200,19 @@ const handleBeaten = (table: TableState, playerId: number): ActionOutcome => {
   const isParticipant = table.currentTurnId === playerId || table.currentDefendId === playerId || table.attack.length > 0;
   if (!isParticipant || !canEndBout(table)) return { type: 'ERROR', log: 'Cannot end bout' };
   
-  const nextAttacker = table.currentDefendId;
+  const nextAttackerId = table.currentDefendId;
+  const defenderIndex = table.players.findIndex(p => p.id === nextAttackerId);
+  const nextDefenderIndex = (defenderIndex + 1) % table.players.length;
+  const nextDefender = table.players[nextDefenderIndex];
+  if (!nextDefender) return { type: 'ERROR', log: '🚫 Next defender not found.' };
+
   const nextState = refillHands({
     ...table,
     discardPile: [...table.discardPile, ...table.attack, ...table.defense],
     attack: [],
     defense: [],
-    currentTurnId: nextAttacker,
-    currentDefendId: (nextAttacker + 1) % table.players.length
+    currentTurnId: nextAttackerId,
+    currentDefendId: nextDefender.id
   }, table.currentTurnId);
 
   return { type: 'SUCCESS', table: nextState, log: `✅ ${table.players.find(p => p.id === playerId)?.name} closed the bout.` };
@@ -209,8 +234,9 @@ export function processIntent(table: TableState, intent: Intent): ActionOutcome 
   if (result.type === 'SUCCESS') {
     const nextTable = result.table;
     if (nextTable.deck.length === 0 && nextTable.hands.some(h => h.cards.length === 0)) {
-        const winner = nextTable.hands.find(h => h.cards.length === 0);
-        const winnerName = nextTable.players.find(p => p.id === winner?.playerId)?.name || "Unknown";
+        const winnerHand = nextTable.hands.find(h => h.cards.length === 0);
+        const winnerPlayer = winnerHand ? nextTable.players.find(p => p.id === winnerHand.playerId) : undefined;
+        const winnerName = winnerPlayer?.name || "Unknown";
         return { type: 'GAME_OVER', winner: winnerName };
     }
   }

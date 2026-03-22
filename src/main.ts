@@ -1,7 +1,8 @@
 import { table$, log$, intent$, resetGame } from "./store";
 import "./player";
 import "./controller";
-import type { TableState } from "./rules";
+import type { TableState, Hand, Player } from "./rules";
+import type { Card } from "./consts";
 
 const botPlayersArea = document.getElementById("bot-players")!;
 const deckCount = document.getElementById("deck-count")!;
@@ -31,7 +32,7 @@ const getSuitSymbol = (suit: string) => {
     }
 }
 
-const renderCard = (card: any, animationClass = '', onClick?: () => void) => {
+const renderCard = (card: Card, animationClass = '', onClick?: () => void) => {
     const cardEl = document.createElement("div");
     cardEl.className = `card ${card.suit} ${animationClass}`;
     cardIdToElement.set(card.id, cardEl);
@@ -60,13 +61,13 @@ const renderCard = (card: any, animationClass = '', onClick?: () => void) => {
     return cardEl;
 }
 
-const getThrowClass = (cardId: string, lastState: any) => {
+const getThrowClass = (cardId: string, lastState: TableState | null) => {
     if (!lastState) return '';
     // Was this card in human hand?
-    const inHumanHand = lastState.hands.find((h: any) => h.playerId === HUMAN_ID)?.cards.some((c: any) => c.id === cardId);
+    const inHumanHand = lastState.hands.find((h: Hand) => h.playerId === HUMAN_ID)?.cards.some((c: Card) => c.id === cardId);
     if (inHumanHand) return 'throw-bottom';
     // Was it in any bot's hand?
-    const inBotHand = lastState.hands.some((h: any) => h.playerId !== HUMAN_ID && h.cards.some((c: any) => c.id === cardId));
+    const inBotHand = lastState.hands.some((h: Hand) => h.playerId !== HUMAN_ID && h.cards.some((c: Card) => c.id === cardId));
     if (inBotHand) return 'throw-top';
     return '';
 }
@@ -101,7 +102,7 @@ btnRestartOverlay.addEventListener("click", () => {
     resetGame();
 });
 
-const onHumanCardClick = (card: any) => {
+const onHumanCardClick = (card: Card) => {
     const table = table$.value;
     if (table.isGameOver) return;
     const isMyTurnToAttack = table.currentTurnId === HUMAN_ID;
@@ -128,17 +129,17 @@ btnTake.addEventListener("click", () => {
 });
 
 const cardIdToElement = new Map<string, HTMLElement>();
-let lastTableState: any = null;
+let lastTableState: TableState | null = null;
 
 table$.subscribe({
-    next: (table: any) => {
-        const hasStateChanged = (path: string[]) => {
+    next: (table: TableState) => {
+        const hasStateChanged = (path: (keyof TableState)[]) => {
             if (!lastTableState) return true;
-            let current = table;
-            let last = lastTableState;
+            let current: Record<string, unknown> | undefined = table as unknown as Record<string, unknown>;
+            let last: Record<string, unknown> | undefined = lastTableState as unknown as Record<string, unknown>;
             for (const key of path) {
-                current = current?.[key];
-                last = last?.[key];
+                current = current?.[key as string] as Record<string, unknown> | undefined;
+                last = last?.[key as string] as Record<string, unknown> | undefined;
             }
             return JSON.stringify(current) !== JSON.stringify(last);
         };
@@ -152,12 +153,12 @@ table$.subscribe({
         // 1. Bots
         if (hasStateChanged(['players']) || hasStateChanged(['hands']) || hasStateChanged(['currentTurnId']) || hasStateChanged(['currentDefendId'])) {
             botPlayersArea.innerHTML = "";
-            table.players.filter((p: any) => p.id !== HUMAN_ID).forEach((player: any) => {
+            table.players.filter((p: Player) => p.id !== HUMAN_ID).forEach((player: Player) => {
                 const playerBox = document.createElement("div");
                 playerBox.className = `player-box ${table.currentTurnId === player.id ? "active" : ""} ${table.currentDefendId === player.id ? "defender" : ""}`;
                 
-                const hand = table.hands.find((h: any) => h.playerId === player.id);
-                const prevHand = lastTableState?.hands.find((h: any) => h.playerId === player.id);
+                const hand = table.hands.find((h: Hand) => h.playerId === player.id);
+                const prevHand = lastTableState?.hands.find((h: Hand) => h.playerId === player.id);
                 const cardCount = hand?.cards.length || 0;
                 const prevCount = prevHand?.cards.length || 0;
                 
@@ -226,15 +227,16 @@ table$.subscribe({
         // 4. Bout Area
         if (hasStateChanged(['attack']) || hasStateChanged(['defense'])) {
             boutArea.innerHTML = "";
-            table.attack.forEach((card: any, i: number) => {
+            table.attack.forEach((card: Card, i: number) => {
                 const pair = document.createElement("div");
                 pair.className = "bout-pair";
                 
                 const attackerCard = renderCard(card, getThrowClass(card.id, lastTableState));
                 pair.appendChild(attackerCard);
 
-                if (table.defense[i]) {
-                    const defenderCard = renderCard(table.defense[i], getThrowClass(table.defense[i].id, lastTableState));
+                const defenderCardObj = table.defense[i];
+                if (defenderCardObj) {
+                    const defenderCard = renderCard(defenderCardObj, getThrowClass(defenderCardObj.id, lastTableState));
                     defenderCard.classList.add("defender-card");
                     pair.appendChild(defenderCard);
                 }
@@ -244,14 +246,14 @@ table$.subscribe({
 
         // 5. Human Hand
         if (hasStateChanged(['hands'])) {
-            const humanHand = table.hands.find((h: any) => h.playerId === HUMAN_ID)?.cards || [];
+            const humanHand = table.hands.find((h: Hand) => h.playerId === HUMAN_ID)?.cards || [];
             humanHandArea.innerHTML = "";
-            humanHand.forEach((card: any) => {
+            humanHand.forEach((card: Card) => {
                 let animation = '';
                 if (lastTableState) {
-                    const wasInHand = lastTableState.hands.find((h: any) => h.playerId === HUMAN_ID)?.cards.some((c: any) => c.id === card.id);
+                    const wasInHand = lastTableState.hands.find((h: Hand) => h.playerId === HUMAN_ID)?.cards.some((c: Card) => c.id === card.id);
                     if (!wasInHand) {
-                        const wasOnTable = lastTableState.attack.some((c: any) => c.id === card.id) || lastTableState.defense.some((c: any) => c.id === card.id);
+                        const wasOnTable = lastTableState.attack.some((c: Card) => c.id === card.id) || lastTableState.defense.some((c: Card) => c.id === card.id);
                         animation = wasOnTable ? 'card-taken' : 'card-dealt';
                     }
                 }

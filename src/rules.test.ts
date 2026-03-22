@@ -31,7 +31,6 @@ describe("Durak Rules Engine", () => {
   };
 
   it("should allow first attack", () => {
-    const card: Card = { id: "c1", rank: "7", suit: "hearts", value: 7 };
     const state: TableState = { ...initialState };
     const intent: Intent = { action: "ATTACK", playerId: 0, cardId: "h0-1" };
     const outcome = rules.processIntent(state, intent);
@@ -94,8 +93,8 @@ describe("Durak Rules Engine", () => {
       const outcome = rules.processIntent(state, intent);
       expect(outcome.type).toBe("SUCCESS");
       if (outcome.type === "SUCCESS") {
-          expect(outcome.table.hands[0].cards.length).toBe(6);
-          expect(outcome.table.hands[1].cards.length).toBe(6);
+          expect(outcome.table.hands[0]?.cards.length).toBe(6);
+          expect(outcome.table.hands[1]?.cards.length).toBe(6);
           expect(outcome.table.deck.length).toBe(0);
       }
   });

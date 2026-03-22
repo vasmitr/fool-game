@@ -25,7 +25,7 @@ The project implements the **Blackboard** architectural pattern, where independe
 
 ### Data Flow
 
-```
+```text
 Human click → intent$ → Controller → applyOutcome → table$ (Blackboard)
                                                          ↓
                                           Controller selects eligible KS

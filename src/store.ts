@@ -4,17 +4,22 @@ import type { Card } from "./consts";
 import type { Intent, TableState, ActionOutcome } from "./rules";
 
 function getInitialState(): TableState {
-  const initialDeck = getDeck();
+  const deckForHands = getDeck();
   const hands = [0, 1, 2, 3].map((id) => ({
     playerId: id,
-    cards: initialDeck.splice(0, 6) as Card[],
+    cards: deckForHands.splice(0, 6) as Card[], // Removes cards from deckForHands
   }));
+
+  // Use pop() to get the trump card and remove it from the deck.
+  // Provide a fallback if the deck is empty.
+  const trumpCard = deckForHands.pop() || getDeck()[0]!; 
+  const trumps = trumpCard;
 
   return {
     currentTurnId: 0,
     currentDefendId: 1,
-    deck: initialDeck,
-    trumps: initialDeck[initialDeck.length - 1] || initialDeck[0],
+    deck: deckForHands, // The remaining cards in the deck
+    trumps: trumps,
     players: [
       { id: 0, name: "Albert Einstein" },
       { id: 1, name: "Marie Curie" },
