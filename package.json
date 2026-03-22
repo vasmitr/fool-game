@@ -17,9 +17,17 @@
     "underscore": "^1.13.8"
   },
   "devDependencies": {
+    "@eslint/css": "^1.0.0",
+    "@eslint/js": "^10.0.1",
+    "@eslint/json": "^1.2.0",
+    "@eslint/markdown": "^7.5.1",
     "@types/node": "^25.5.0",
     "@types/underscore": "^1.13.0",
+    "eslint": "^10.1.0",
+    "globals": "^17.4.0",
+    "jiti": "^2.6.1",
     "tsx": "^4.0.0",
+    "typescript-eslint": "^8.57.1",
     "vite": "^6.4.1",
     "vitest": "^4.1.0"
   }
