@@ -22,7 +22,7 @@ export function findBestDefense(
   defenseCards: Card[],
   trumps: Card,
   deckSize: number,
-) {
+): { action: "DEFEND" | "PASS" | "TAKE"; cardId: string } | null {
   const indexToDefend = defenseCards.length;
   if (indexToDefend >= attackCards.length) return null;
 

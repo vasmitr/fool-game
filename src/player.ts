@@ -1,86 +1,70 @@
+import { match } from "ts-pattern";
 import { registerKS } from "./store.js";
 import { findBestDefense, findBestAttack } from "./helpers.js";
 import type { TableState, Intent } from "./rules.js";
+import {
+  getHand,
+  getDefenderHandCount,
+  isDefender,
+  isPrimaryAttacker,
+  canEndBout,
+  hasUndefendedCards,
+} from "./selectors.js";
 
-const validateCards = (table: TableState) => {
-    return table.attack.length > 0 &&
-	table.attack.length === table.defense.length
-};
+const canAct =
+  (playerId: number) =>
+  (table: TableState): boolean => {
+    if (table.isGameOver) return false;
+    if (isDefender(table, playerId)) return hasUndefendedCards(table);
+    if (isPrimaryAttacker(table, playerId) && canEndBout(table)) return true;
+    return (
+      (isPrimaryAttacker(table, playerId) || table.attack.length > 0) &&
+      table.attack.length < getDefenderHandCount(table)
+    );
+  };
 
-const canAct = (playerId: number) => (table: TableState): boolean => {
-  if (table.isGameOver) return false;
-  const isMyTurnToDefend = table.currentDefendId === playerId;
-  const isMyTurnToAttack = table.currentTurnId === playerId;
-  const defenderHandCount =
-    table.hands.find((h) => h.playerId === table.currentDefendId)?.cards
-      .length ?? 0;
+const propose =
+  (playerId: number) =>
+  (table: TableState): Intent | null => {
+    // Human player (id=0) never auto-proposes; their input arrives via intent$
+    if (playerId === 0) return null;
 
-  if (isMyTurnToDefend) return table.attack.length > table.defense.length;
-  // Primary attacker can always end the bout (BEATEN) once all attacks are defended
-  if (
-    isMyTurnToAttack && validateCards(table)
-  ) {
-    return true;
-  }
-  return (
-    (isMyTurnToAttack || table.attack.length > 0) &&
-    table.attack.length < defenderHandCount
-  );
-};
+    const myHand = getHand(table, playerId);
 
-const propose = (playerId: number) => (table: TableState): Intent | null => {
-  // Human player (id=0) never auto-proposes; their input arrives via intent$
-  if (playerId === 0) return null;
+    if (isDefender(table, playerId)) {
+      const suggestion = findBestDefense(
+        myHand,
+        table.attack,
+        table.defense,
+        table.trumps,
+        table.deck.length
+      );
+      return match(suggestion)
+        .with(null, () => null)
+        .with({ action: "TAKE" }, () => ({ action: "TAKE" as const, playerId }))
+        .otherwise((s) => ({ action: s.action, playerId, cardId: s.cardId }));
+    }
 
-  const myHand =
-    table.hands.find((h) => h.playerId === playerId)?.cards ?? [];
-  const defenderHandCount =
-    table.hands.find((h) => h.playerId === table.currentDefendId)?.cards
-      .length ?? 0;
-  const isMyTurnToDefend = table.currentDefendId === playerId;
-  const isMyTurnToAttack = table.currentTurnId === playerId;
-
-  if (isMyTurnToDefend) {
-    const suggestion = findBestDefense(
+    const suggestion = findBestAttack(
       myHand,
       table.attack,
       table.defense,
       table.trumps,
-      table.deck.length,
+      getDefenderHandCount(table),
+      table.deck.length
     );
-    if (!suggestion) return null;
-    if (suggestion.action === "TAKE") return { action: "TAKE", playerId };
-    return {
-      action: suggestion.action === "PASS" ? "PASS" : "DEFEND",
-      playerId,
-      cardId: suggestion.cardId,
-    };
-  }
-
-  const suggestion = findBestAttack(
-    myHand,
-    table.attack,
-    table.defense,
-    table.trumps,
-    defenderHandCount,
-    table.deck.length,
-  );
-  if (suggestion) return { action: "ATTACK", playerId, cardId: suggestion.cardId };
-  if (
-    isMyTurnToAttack &&
-    table.attack.length > 0 &&
-    table.attack.length === table.defense.length
-  ) {
-    return { action: "BEATEN", playerId };
-  }
-  return null;
-};
+    if (suggestion)
+      return { action: "ATTACK", playerId, cardId: suggestion.cardId };
+    if (isPrimaryAttacker(table, playerId) && canEndBout(table))
+      return { action: "BEATEN", playerId };
+    return null;
+  };
 
 // Register all players as Knowledge Sources (human id=0 never auto-proposes)
 [0, 1, 2, 3].forEach((id) => {
   registerKS({
     playerId: id,
     canAct: canAct(id),
-    propose: propose(id),
+    propose: propose(id)
   });
 });

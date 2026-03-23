@@ -22,6 +22,7 @@
     "lucide-solid": "^0.577.0",
     "rxjs": "^7.8.2",
     "solid-js": "^1.9.11",
+    "ts-pattern": "^5.9.0",
     "underscore": "^1.13.8",
     "vite-plugin-solid": "^2.11.11"
   },
