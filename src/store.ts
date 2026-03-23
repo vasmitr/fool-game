@@ -1,4 +1,4 @@
-import { BehaviorSubject, Subject } from "rxjs";
+import { BehaviorSubject, Observable, Subject } from "rxjs";
 import { getDeck } from "./helpers.js";
 import type { Card } from "./consts.js";
 import type { Intent, TableState, ActionOutcome } from "./rules.js";
@@ -55,7 +55,7 @@ export function applyOutcome(table: TableState, outcome: ActionOutcome): void {
 export type KnowledgeSource = {
   playerId: number;
   canAct: (table: TableState) => boolean;
-  propose: (table: TableState) => Intent | null;
+  propose: (table: TableState) => Observable<Intent | null>;
 };
 
 export const knowledgeSources: KnowledgeSource[] = [];

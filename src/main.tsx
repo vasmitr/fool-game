@@ -1,8 +1,8 @@
 import { render } from 'solid-js/web';
 import App from './App.jsx';
 import './index.css';
-import './controller.js';
 import './player.js';
+import './controller.js';
 
 const root = document.getElementById('root');
 

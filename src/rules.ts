@@ -120,7 +120,10 @@ const handleAttack = (
     table.attack.length > 0 && isParticipant && !isDefender(table, playerId);
 
   if (!isCurrentAttacker && !isAllowedToAdd)
-    return err("🚫 Not your turn to attack.", table);
+    return err(
+      `🚫 ${getPlayerName(table, playerId)}: Not your turn to attack (Current Turn: ${getPlayerName(table, table.currentTurnId)}).`,
+      table
+    );
 
   return match(getCard(table, playerId, cardId))
     .with(

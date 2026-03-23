@@ -18,39 +18,33 @@ The project implements the **Blackboard** architectural pattern, where independe
 | File | Blackboard Role | Responsibility |
 |------|----------------|----------------|
 | `src/store.ts` | **Blackboard** | Shared game state (`table$`), write API (`applyOutcome`), KS registry |
-| `src/controller.ts` | **Controller** | Selects one eligible KS per state change, routes human intents, auto-passes on timeout |
-| `src/player.ts` | **Knowledge Sources** | AI bots register `canAct` + `propose` functions |
+| `src/controller.ts` | **Controller** | Orchestrates the game loop by merging proposals from all eligible Knowledge Sources |
+| `src/player.ts` | **Knowledge Sources** | Both AI and Human players register `canAct` + `propose` functions |
 | `src/rules.ts` | **Rule Engine** | Pure game logic, validates and transforms state |
 | `src/helpers.ts` | **AI Strategy** | Best-attack and best-defense algorithms |
 
 ### Data Flow
 
 ```text
-Human click → intent$ → Controller → applyOutcome → table$ (Blackboard)
-                                                         ↓
-                                          Controller selects eligible KS
-                                                         ↓
-                                          timer(AI_DELAY_MS) → KS.propose()
-                                                         ↓
-                                                    applyOutcome → table$
+Human click → intent$ → Human KS (propose) ↘
+                                           [merge] → applyOutcome → table$
+AI Strategy → AI Delay → AI KS (propose)   ↗           (Blackboard)
 ```
 
-### Controller Selection Priority
+### Concurrent Proposal Strategy
 
-On each `table$` emission, the controller picks **one** eligible KS:
+On each `table$` emission, the controller identifies **all** eligible Knowledge Sources (`canAct` returns `true`). It then **merges** their `propose` streams.
 
-1. **Defender** — when there are undefended cards on the table
-2. **Primary attacker** — when all attacks are defended
-3. **Throw-in players** — other non-defenders with matching-rank cards
-
-If no KS is eligible and the bout is fully defended (human's decision time), an auto-pass fires after `AUTO_PASS_MS`. `switchMap` ensures only one pending action exists at a time — cancelling stale timers when state changes.
+- **Race to the Table**: The first player to emit a valid `Intent` wins that turn.
+- **Auto-Cancellation**: Once an intent is processed and the `table$` updates, all other pending proposals (like an AI still "thinking" during its delay) are automatically cancelled by `switchMap`.
+- **Human Response**: The Human player is always eligible when it's their turn to attack, defend, or throw-in. Their `propose` stream simply waits for the next emission from `intent$`.
 
 ### RxJS Highlights
 
-- `BehaviorSubject` — blackboard holds and replays current state to new subscribers
-- `switchMap` — cancels pending AI timers on new state, preventing race conditions
-- `timer` — non-blocking AI delay; replaced original `of(null).pipe(delay(...))`
-- Pure `canAct`/`propose` functions replace the original self-initiating RxJS streams per bot
+- **`BehaviorSubject`** — blackboard holds and replays current state to new subscribers.
+- **`merge`** — allows multiple players (AI and Human) to "think" concurrently; the first one to act triggers the state change.
+- **`switchMap`** — the engine of the game loop; it restarts the proposal phase every time the table state changes, ensuring nobody acts on stale data.
+- **`first()`** — used by the Human KS to take exactly one UI intent per proposal request.
 
 ## 🛠️ Tech Stack
 

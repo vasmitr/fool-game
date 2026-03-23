@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { of } from "rxjs";
 import { selectKS } from "./controller.js";
 import type { KnowledgeSource } from "./store.js";
 import type { TableState } from "./rules.js";
@@ -33,7 +34,7 @@ const baseState: TableState = {
 const makeKS = (playerId: number, canAct = true): KnowledgeSource => ({
   playerId,
   canAct: () => canAct,
-  propose: () => null,
+  propose: () => of(null),
 });
 
 describe("selectKS", () => {
@@ -44,8 +45,8 @@ describe("selectKS", () => {
     expect(selectKS(state, ks)?.playerId).toBe(1);
   });
 
-  it("never selects the human even when human is the defender", () => {
-    // Human defends via intent$ directly — controller must not block waiting for them
+  it("selects human when human is the defender", () => {
+    // Human defends via propose() returning intent$.pipe(first())
     const state = {
       ...baseState,
       attack: [card("a1")],
@@ -54,9 +55,7 @@ describe("selectKS", () => {
       currentDefendId: 0, // human defends
     };
     const ks = [makeKS(0), makeKS(1), makeKS(2), makeKS(3)];
-    // No AI defender → falls through; AI-1 is primary attacker but not defender
-    // AI-2, AI-3 are throw-ins but no undefended card context for them
-    expect(selectKS(state, ks)?.playerId).not.toBe(0);
+    expect(selectKS(state, ks)?.playerId).toBe(0);
   });
 
   it("selects AI primary attacker when all attacks are defended", () => {
@@ -70,7 +69,8 @@ describe("selectKS", () => {
     expect(selectKS(state, ks)?.playerId).toBe(2);
   });
 
-  it("selects AI throw-in when human is the primary attacker", () => {
+  it("selects human over AI throw-in when human is the primary attacker", () => {
+    // Human (primary attacker, priority 1) beats AI throw-in (priority 2)
     const state = {
       ...baseState,
       attack: [card("a1")],
@@ -78,10 +78,11 @@ describe("selectKS", () => {
       currentTurnId: 0, // human is primary attacker
     };
     const ks = [makeKS(0), makeKS(1, false), makeKS(2), makeKS(3, false)];
-    expect(selectKS(state, ks)?.playerId).toBe(2);
+    expect(selectKS(state, ks)?.playerId).toBe(0);
   });
 
-  it("returns undefined when no AI can act (human acts via intent$)", () => {
+  it("selects human when only human can act", () => {
+    // Human is now a full KS — selected whenever canAct returns true
     const state = {
       ...baseState,
       attack: [card("a1")],
@@ -89,7 +90,7 @@ describe("selectKS", () => {
       currentTurnId: 0,
     };
     const ks = [makeKS(0), makeKS(1, false), makeKS(2, false), makeKS(3, false)];
-    expect(selectKS(state, ks)).toBeUndefined();
+    expect(selectKS(state, ks)?.playerId).toBe(0);
   });
 
   it("returns undefined when nobody can act", () => {
