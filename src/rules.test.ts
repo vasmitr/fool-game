@@ -51,6 +51,32 @@ describe("Durak Rules Engine", () => {
     expect(outcome.type).toBe("SUCCESS");
   });
 
+  it("should fail DEFEND but succeed PASS for transfer on same rank", () => {
+    const attackCard: Card = { id: "a1", rank: "6", suit: "clubs", value: 6 };
+    const state: TableState = { 
+        ...initialState, 
+        attack: [attackCard],
+        defense: [],
+        currentTurnId: 0,
+        currentDefendId: 1,
+        hands: [
+          ...initialState.hands.filter(h => h.playerId !== 1),
+          { playerId: 1, cards: [{ id: "h1-1", rank: "6", suit: "hearts", value: 6 }] }
+        ]
+    };
+    
+    // DEFEND fails (6h doesn't beat 6c)
+    const intentDefend: Intent = { action: "DEFEND", playerId: 1, cardId: "h1-1" };
+    const outcomeDefend = rules.processIntent(state, intentDefend);
+    expect(outcomeDefend.type).toBe("ERROR");
+    expect(outcomeDefend.log).toContain("Cannot beat the card");
+
+    // PASS succeeds (Transfer)
+    const intentPass: Intent = { action: "PASS", playerId: 1, cardId: "h1-1" };
+    const outcomePass = rules.processIntent(state, intentPass);
+    expect(outcomePass.type).toBe("SUCCESS");
+  });
+
   it("should detect GAME_OVER correctly", () => {
     const lastCard: Card = { id: "last", rank: "A", suit: "spades", value: 14 };
     const state: TableState = {

@@ -5,6 +5,7 @@ import type { Card as CardType } from "./consts.js";
 import { Card } from "./components/Card.jsx";
 import { Hand } from "./components/Hand.jsx";
 import { Log } from "./components/Log.jsx";
+import { canEndBout, allDefended } from "./selectors.js";
 import gsap from "gsap";
 
 const avatars = [
@@ -218,21 +219,20 @@ export default function App() {
           {/* No redundant status badge here - only the flying notice will land here */}
           <Show when={isHumanTurn()}>
             <div class="flex gap-6">
-              <button
-                onClick={() => intent$.next({ action: "TAKE", playerId: 0 })}
-                disabled={
-                  state().currentDefendId !== 0 || state().attack.length === 0
-                }
-                class="px-10 py-4 bg-secondary-container text-on-secondary-container rounded-full font-headline font-bold text-xs uppercase tracking-widest border border-white/5 hover:scale-105 transition-all active:scale-95 shadow-2xl disabled:opacity-20 flex items-center gap-2"
-              >
-                Take Cards
-              </button>
+              <Show when={state().currentDefendId === 0 && state().attack.length > 0}>
+                <button
+                  onClick={() => intent$.next({ action: "TAKE", playerId: 0 })}
+                  class="px-10 py-4 bg-secondary-container text-on-secondary-container rounded-full font-headline font-bold text-xs uppercase tracking-widest border border-white/5 hover:scale-105 transition-all active:scale-95 shadow-2xl disabled:opacity-20 flex items-center gap-2"
+                >
+                  Take Cards
+                </button>
+              </Show>
               <button
                 onClick={() => intent$.next({ action: "BEATEN", playerId: 0 })}
-                disabled={state().attack.length === 0}
+                disabled={!canEndBout(state())}
                 class="px-12 py-4 bg-primary text-on-primary rounded-full font-headline font-bold text-xs uppercase tracking-widest hover:scale-105 transition-all active:scale-95 shadow-[0_0_30px_rgba(186,195,255,0.3)] disabled:opacity-20 flex items-center gap-2"
               >
-                Pass / End Turn
+                {allDefended(state()) ? "End Turn / Bito" : "Pass"}
               </button>
             </div>
           </Show>

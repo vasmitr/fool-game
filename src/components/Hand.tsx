@@ -2,6 +2,7 @@ import { For } from 'solid-js';
 import { Card } from './Card.jsx';
 import { table$, intent$ } from '../store.js';
 import type { Card as CardType } from '../consts.js';
+import { getTableRanks, isDefender } from '../selectors.js';
 
 interface HandProps {
   cards: CardType[];
@@ -14,7 +15,13 @@ export function Hand(props: HandProps) {
     if (table.isGameOver) return;
     
     // Choose action based on role
-    const action = table.currentDefendId === 0 ? "DEFEND" : "ATTACK";
+    let action: "ATTACK" | "DEFEND" | "PASS" = isDefender(table, 0) ? "DEFEND" : "ATTACK";
+
+    // Transfer logic: if defender plays same rank on empty defense
+    if (action === "DEFEND" && table.defense.length === 0 && getTableRanks(table).includes(card.rank)) {
+      action = "PASS";
+    }
+
     intent$.next({ action, playerId: 0, cardId: card.id });
   };
 
