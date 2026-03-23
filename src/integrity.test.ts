@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { TableState, processIntent, Hand, Intent } from "./rules";
-import { getDeck } from "./helpers";
-import { Card, Rank, suits } from "./consts";
+import { TableState, processIntent, Hand, Intent } from "./rules.js";
+import { getDeck } from "./helpers.js";
+import { Card, Rank, suits } from "./consts.js";
 
 describe("Game Integrity Tests", () => {
   const checkIntegrity = (table: TableState) => {

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import * as rules from "./rules";
-import { TableState, Intent } from "./rules";
-import { Card, Rank } from "./consts";
+import * as rules from "./rules.js";
+import { TableState, Intent } from "./rules.js";
+import { Card, Rank } from "./consts.js";
 
 describe("Durak Rules Engine", () => {
   const getDummy = (id: string, rank: Rank = "6"): Card => ({ id, rank, suit: "clubs", value: 6 });

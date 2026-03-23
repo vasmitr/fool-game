@@ -13,6 +13,7 @@ export default tseslint.config(
       "coverage/**",
       "**/assets/*.js",
       ".claude/**",
+      "**/.#*",
     ],
   },
   {
@@ -57,7 +58,7 @@ export default tseslint.config(
     plugins: { css },
     language: "css/css",
     rules: {
-      "css/no-duplicate-properties": "error",
+      "css/no-invalid-properties": "error",
     },
   },
 );

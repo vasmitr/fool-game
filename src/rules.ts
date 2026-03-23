@@ -1,4 +1,4 @@
-import { Card } from "./consts";
+import { Card } from "./consts.js";
 
 export interface Hand {
   playerId: number;

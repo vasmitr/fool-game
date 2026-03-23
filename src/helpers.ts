@@ -1,5 +1,5 @@
 import { shuffle, uniqueId } from "underscore";
-import { rankValues, suits, Card, Rank } from "./consts";
+import { rankValues, suits, Card, Rank } from "./consts.js";
 
 export function getDeck(): Card[] {
   const deck = (Object.entries(rankValues) as [Rank, number][]).flatMap(([rank, value]) =>

@@ -1,6 +1,6 @@
-import { table$ } from "./store";
-import "./player";
-import "./controller";
+import { table$ } from "./store.js";
+import "./player.js";
+import "./controller.js";
 
 console.log("=== DURAK AUTONOMOUS GAME START ===");
 

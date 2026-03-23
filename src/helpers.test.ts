@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { getDeck, findBestDefense, findBestAttack, refillHands } from "./helpers";
-import type { Card, Rank, Suit } from "./consts";
+import { getDeck, findBestDefense, findBestAttack, refillHands } from "./helpers.js";
+import type { Card, Rank, Suit } from "./consts.js";
 
 describe("getDeck", () => {
   it("should return a deck of 36 cards", () => {
