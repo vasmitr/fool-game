@@ -1,0 +1,8 @@
+if [ -f pnpm-lock.yaml ]; then
+  pm=pnpm
+elif [ -f yarn.lock ]; then
+  pm=yarn
+else
+  pm=npm
+fi
+$pm run test && $pm run lint && $pm run type-check
