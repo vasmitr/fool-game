@@ -1,17 +1,24 @@
+import { match, P } from "ts-pattern";
 import type { TableState } from "./rules.js";
 import type { Card } from "./consts.js";
 
 export const getHand = (table: TableState, playerId: number): Card[] =>
-  table.hands.find((h) => h.playerId === playerId)?.cards ?? [];
+  match(table.hands.find((h) => h.playerId === playerId))
+    .with(P.nonNullable, (h) => h.cards)
+    .otherwise(() => []);
 
 export const getDefenderHandCount = (table: TableState): number =>
   getHand(table, table.currentDefendId).length;
 
 export const getCard = (table: TableState, playerId: number, cardId: string) =>
-  getHand(table, playerId).find((c) => c.id === cardId);
+  match(getHand(table, playerId).find((c) => c.id === cardId))
+    .with(P.nonNullable, (c) => c)
+    .otherwise(() => undefined);
 
 export const getPlayerName = (table: TableState, playerId: number): string =>
-  table.players.find((p) => p.id === playerId)?.name ?? "Unknown";
+  match(table.players.find((p) => p.id === playerId))
+    .with(P.nonNullable, (p) => p.name)
+    .otherwise(() => "Unknown");
 
 export const isDefender = (table: TableState, playerId: number): boolean =>
   table.currentDefendId === playerId;
@@ -33,12 +40,22 @@ export const getTableRanks = (table: TableState): string[] => [
 ];
 
 export const getNextPlayer = (table: TableState, afterPlayerId: number) =>
-  table.players[(table.players.findIndex((p) => p.id === afterPlayerId) + 1) % table.players.length];
+  table.players[
+    (table.players.findIndex((p) => p.id === afterPlayerId) + 1) %
+      table.players.length
+  ];
 
-export const getWinner = (table: TableState): string | undefined => {
-  if (table.deck.length > 0) return undefined;
-  const winnerHand = table.hands.find((h) => h.cards.length === 0);
-  return winnerHand
-    ? table.players.find((p) => p.id === winnerHand.playerId)?.name
-    : undefined;
-};
+export const canBeat = (card: Card, target: Card, trumpSuit: string): boolean =>
+  match({ sameSuit: card.suit === target.suit, cardIsTrump: card.suit === trumpSuit, targetIsTrump: target.suit === trumpSuit })
+    .with({ sameSuit: true }, () => card.value > target.value)
+    .with({ cardIsTrump: true, targetIsTrump: false }, () => true)
+    .otherwise(() => false);
+
+export const getWinner = (table: TableState): string | undefined =>
+  match(table.deck.length === 0)
+    .with(true, () =>
+      match(table.hands.find((h) => h.cards.length === 0))
+        .with(P.nonNullable, (h) => getPlayerName(table, h.playerId))
+        .otherwise(() => undefined)
+    )
+    .otherwise(() => undefined);

@@ -9,7 +9,8 @@ import {
   getWinner,
   isDefender,
   isPrimaryAttacker,
-  canEndBout
+  canEndBout,
+  canBeat
 } from "./selectors.js";
 
 export interface Hand {
@@ -58,7 +59,9 @@ const updateHand =
   (table: TableState): TableState => ({
     ...table,
     hands: table.hands.map((h) =>
-      h.playerId === playerId ? { ...h, cards: updater(h.cards) } : h
+      match(h.playerId === playerId)
+        .with(true, () => ({ ...h, cards: updater(h.cards) }))
+        .otherwise(() => h)
     )
   });
 
@@ -73,32 +76,36 @@ const refillPlayerHand = (acc: RefillAcc, hand: Hand): RefillAcc => {
   };
 };
 
-const refillHands = (
+export const refillHands = (
   table: TableState,
   startingPlayerId: number
 ): TableState => {
   const startIndex = table.hands.findIndex(
     (h) => h.playerId === startingPlayerId
   );
-  if (startIndex === -1) return table;
+  return match(startIndex)
+    .with(-1, () => table)
+    .otherwise(() => {
+      const n = table.hands.length;
+      const { deck, updates } = _.chain(table.hands)
+        .sortBy((_, i) => (i - startIndex + n) % n)
+        .reduce(refillPlayerHand, {
+          deck: table.deck,
+          updates: {} as Record<number, Card[]>
+        })
+        .value();
 
-  const n = table.hands.length;
-  const { deck, updates } = _.chain(table.hands)
-    .sortBy((_, i) => (i - startIndex + n) % n)
-    .reduce(refillPlayerHand, {
-      deck: table.deck,
-      updates: {} as Record<number, Card[]>
-    })
-    .value();
-
-  return {
-    ...table,
-    deck,
-    hands: table.hands.map((h) => ({
-      ...h,
-      cards: updates[h.playerId] ?? h.cards
-    }))
-  };
+      return {
+        ...table,
+        deck,
+        hands: table.hands.map((h) => ({
+          ...h,
+          cards: match(updates[h.playerId])
+            .with(P.nonNullable, (c) => c)
+            .otherwise(() => h.cards)
+        }))
+      };
+    });
 };
 
 const err = (log: string, table: TableState): ActionOutcome => ({
@@ -107,185 +114,211 @@ const err = (log: string, table: TableState): ActionOutcome => ({
   table: { ...table }
 });
 
+const isParticipant = (table: TableState, playerId: number): boolean =>
+  table.hands.some((h) => h.playerId === playerId);
+
+const canAddAttack = (table: TableState, playerId: number): boolean =>
+  match(table.attack.length > 0)
+    .with(true, () =>
+      match(isParticipant(table, playerId))
+        .with(true, () =>
+          match(isDefender(table, playerId)).with(false, () => true).otherwise(() => false)
+        )
+        .otherwise(() => false)
+    )
+    .otherwise(() => false);
+
 // --- HANDLERS ---
 
 const handleAttack = (
   table: TableState,
   playerId: number,
   cardId: string
-): ActionOutcome => {
-  const isCurrentAttacker = isPrimaryAttacker(table, playerId);
-  const isParticipant = table.hands.some((h) => h.playerId === playerId);
-  const isAllowedToAdd =
-    table.attack.length > 0 && isParticipant && !isDefender(table, playerId);
-
-  if (!isCurrentAttacker && !isAllowedToAdd)
-    return err(
-      `🚫 ${getPlayerName(table, playerId)}: Not your turn to attack (Current Turn: ${getPlayerName(table, table.currentTurnId)}).`,
-      table
-    );
-
-  return match(getCard(table, playerId, cardId))
-    .with(
-      P.nonNullable,
-      (card) =>
-        table.attack.length > 0 && !getTableRanks(table).includes(card.rank),
-      () => err("🚫 Invalid rank for attack.", table)
+): ActionOutcome =>
+  match({
+    isPrimary: isPrimaryAttacker(table, playerId),
+    canAdd: canAddAttack(table, playerId)
+  })
+    .with({ isPrimary: false, canAdd: false }, () =>
+      err(
+        `🚫 ${getPlayerName(table, playerId)}: Not your turn to attack (Current Turn: ${getPlayerName(table, table.currentTurnId)}).`,
+        table
+      )
     )
-    .with(P.nonNullable, (card) => ({
-      type: "SUCCESS" as const,
-      table: updateHand(playerId, (cards) =>
-        cards.filter((c) => c.id !== cardId)
-      )({ ...table, attack: [...table.attack, card] }),
-      log: `⚔️ ${getPlayerName(table, playerId)} plays ${card.rank}${card.suit[0]} (ATTACK)`
-    }))
-    .otherwise(() => err("🚫 Card not found.", table));
-};
+    .otherwise(() =>
+      match(getCard(table, playerId, cardId))
+        .with(
+          P.nonNullable,
+          (card) =>
+            match(table.attack.length > 0)
+              .with(true, () => !getTableRanks(table).includes(card.rank))
+              .otherwise(() => false),
+          () => err("🚫 Invalid rank for attack.", table)
+        )
+        .with(P.nonNullable, (card) => ({
+          type: "SUCCESS" as const,
+          table: updateHand(playerId, (cards) =>
+            cards.filter((c) => c.id !== cardId)
+          )({ ...table, attack: [...table.attack, card] }),
+          log: `⚔️ ${getPlayerName(table, playerId)} plays ${card.rank}${card.suit[0]} (ATTACK)`
+        }))
+        .otherwise(() => err("🚫 Card not found.", table))
+    );
 
 const handleDefend = (
   table: TableState,
   playerId: number,
   cardId: string
-): ActionOutcome => {
-  if (!isDefender(table, playerId))
-    return err("🚫 Not your turn to defend.", table);
-
-  return match(getCard(table, playerId, cardId))
-    .with(P.nonNullable, (card) =>
-      match(table.attack[table.defense.length])
-        .with(
-          P.nonNullable,
-          (target) =>
-            !(card.suit === target.suit && card.value > target.value) &&
-            !(
-              card.suit === table.trumps.suit &&
-              target.suit !== table.trumps.suit
-            ),
-          () => err("🚫 Cannot beat the card.", table)
+): ActionOutcome =>
+  match(isDefender(table, playerId))
+    .with(false, () => err("🚫 Not your turn to defend.", table))
+    .otherwise(() =>
+      match(getCard(table, playerId, cardId))
+        .with(P.nonNullable, (card) =>
+          match(table.attack[table.defense.length])
+            .with(
+              P.nonNullable,
+              (target) =>
+                match(canBeat(card, target, table.trumps.suit))
+                  .with(false, () => true)
+                  .otherwise(() => false),
+              () => err("🚫 Cannot beat the card.", table)
+            )
+            .with(P.nonNullable, () => ({
+              type: "SUCCESS" as const,
+              table: updateHand(playerId, (cards) =>
+                cards.filter((c) => c.id !== cardId)
+              )({ ...table, defense: [...table.defense, card] }),
+              log: `🛡️ ${getPlayerName(table, playerId)} plays ${card.rank}${card.suit[0]} (DEFEND)`
+            }))
+            .otherwise(() => err("🚫 No card to beat.", table))
         )
-        .with(P.nonNullable, () => ({
-          type: "SUCCESS" as const,
-          table: updateHand(playerId, (cards) =>
-            cards.filter((c) => c.id !== cardId)
-          )({ ...table, defense: [...table.defense, card] }),
-          log: `🛡️ ${getPlayerName(table, playerId)} plays ${card.rank}${card.suit[0]} (DEFEND)`
-        }))
-        .otherwise(() => err("🚫 No card to beat.", table))
-    )
-    .otherwise(() => err("🚫 Card not found.", table));
-};
+        .otherwise(() => err("🚫 Card not found.", table))
+    );
 
 const handlePass = (
   table: TableState,
   playerId: number,
   cardId: string
-): ActionOutcome => {
-  if (!isDefender(table, playerId))
-    return err("🚫 Only the defender can transfer.", table);
-
-  const card = getCard(table, playerId, cardId);
-  const nextDefender = getNextPlayer(table, table.currentDefendId);
-
-  return match({ card, nextDefender })
-    .with(
-      { card: P.nonNullable, nextDefender: P.nonNullable },
-      ({ card }) =>
-        table.defense.length > 0 || !getTableRanks(table).includes(card.rank),
-      () => err("🚫 Cannot transfer.", table)
-    )
-    .with(
-      { card: P.nonNullable, nextDefender: P.nonNullable },
-      ({ card, nextDefender }) => {
-        const postPass = updateHand(playerId, (cards) =>
-          cards.filter((c) => c.id !== cardId)
-        )(table);
-
-        return {
-          type: "SUCCESS" as const,
-          table: {
-            ...postPass,
-            attack: [...postPass.attack, card],
-            currentDefendId: nextDefender.id,
-            currentTurnId: playerId
-          },
-          log: `🔄 ${getPlayerName(table, playerId)} transfers the bout.`
-        };
-      }
-    )
-    .otherwise(() => err("🚫 Cannot transfer.", table));
-};
-
-const handleTake = (table: TableState, playerId: number): ActionOutcome => {
-  if (!isDefender(table, playerId))
-    return err("🚫 Only defender can take cards.", table);
-
-  const allCards = [...table.attack, ...table.defense];
-  const postTake = updateHand(playerId, (cards) => [...cards, ...allCards])(
-    table
-  );
-  const nextAttacker = getNextPlayer(table, table.currentDefendId);
-  const nextDefender = nextAttacker && getNextPlayer(table, nextAttacker.id);
-
-  return match({ nextAttacker, nextDefender })
-    .with(
-      { nextAttacker: P.nonNullable, nextDefender: P.nonNullable },
-      ({ nextAttacker, nextDefender }) => ({
-        type: "SUCCESS" as const,
-        table: refillHands(
-          {
-            ...postTake,
-            attack: [],
-            defense: [],
-            currentTurnId: nextAttacker.id,
-            currentDefendId: nextDefender.id
-          },
-          table.currentTurnId
-        ),
-        log: `📥 ${getPlayerName(table, playerId)} takes all cards.`
+): ActionOutcome =>
+  match(isDefender(table, playerId))
+    .with(false, () => err("🚫 Only the defender can transfer.", table))
+    .otherwise(() =>
+      match({
+        card: getCard(table, playerId, cardId),
+        nextDefender: getNextPlayer(table, table.currentDefendId)
       })
-    )
-    .otherwise(() => err("🚫 Player rotation failed.", table));
-};
+        .with(
+          { card: P.nonNullable, nextDefender: P.nonNullable },
+          ({ card }) =>
+            match(table.defense.length > 0)
+              .with(true, () => true)
+              .otherwise(() => !getTableRanks(table).includes(card.rank)),
+          () => err("🚫 Cannot transfer.", table)
+        )
+        .with(
+          { card: P.nonNullable, nextDefender: P.nonNullable },
+          ({ card, nextDefender }) => {
+            const postPass = updateHand(playerId, (cards) =>
+              cards.filter((c) => c.id !== cardId)
+            )(table);
 
-const handleBeaten = (table: TableState, playerId: number): ActionOutcome => {
-  const isParticipant =
-    isPrimaryAttacker(table, playerId) ||
-    isDefender(table, playerId) ||
-    table.attack.length > 0;
+            return {
+              type: "SUCCESS" as const,
+              table: {
+                ...postPass,
+                attack: [...postPass.attack, card],
+                currentDefendId: nextDefender.id,
+                currentTurnId: playerId
+              },
+              log: `🔄 ${getPlayerName(table, playerId)} transfers the bout.`
+            };
+          }
+        )
+        .otherwise(() => err("🚫 Cannot transfer.", table))
+    );
 
-  if (!isParticipant || !canEndBout(table))
-    return err("Cannot end bout", table);
+const handleTake = (table: TableState, playerId: number): ActionOutcome =>
+  match(isDefender(table, playerId))
+    .with(false, () => err("🚫 Only defender can take cards.", table))
+    .otherwise(() => {
+      const allCards = [...table.attack, ...table.defense];
+      const postTake = updateHand(playerId, (cards) => [...cards, ...allCards])(
+        table
+      );
+      const nextAttacker = getNextPlayer(table, table.currentDefendId);
+      const nDef = match(nextAttacker)
+        .with(P.nonNullable, (a) => getNextPlayer(table, a.id))
+        .otherwise(() => undefined);
 
-  const nextAttacker = table.players.find(
-    (p) => p.id === table.currentDefendId
-  );
-  const nextDefender = nextAttacker && getNextPlayer(table, nextAttacker.id);
+      return match({ nextAttacker, nextDefender: nDef })
+        .with(
+          { nextAttacker: P.nonNullable, nextDefender: P.nonNullable },
+          ({ nextAttacker, nextDefender }) => ({
+            type: "SUCCESS" as const,
+            table: refillHands(
+              {
+                ...postTake,
+                attack: [],
+                defense: [],
+                currentTurnId: nextAttacker.id,
+                currentDefendId: nextDefender.id
+              },
+              table.currentTurnId
+            ),
+            log: `📥 ${getPlayerName(table, playerId)} takes all cards.`
+          })
+        )
+        .otherwise(() => err("🚫 Player rotation failed.", table));
+    });
 
-  return match({ nextAttacker, nextDefender })
-    .with(
-      { nextAttacker: P.nonNullable, nextDefender: P.nonNullable },
-      ({ nextAttacker, nextDefender }) => ({
-        type: "SUCCESS" as const,
-        table: refillHands(
-          {
-            ...table,
-            discardPile: [
-              ...table.discardPile,
-              ...table.attack,
-              ...table.defense
-            ],
-            attack: [],
-            defense: [],
-            currentTurnId: nextAttacker.id,
-            currentDefendId: nextDefender.id
-          },
-          table.currentTurnId
+const handleBeaten = (table: TableState, playerId: number): ActionOutcome =>
+  match({
+    isPart:
+      match(isPrimaryAttacker(table, playerId))
+        .with(true, () => true)
+        .otherwise(() =>
+          match(isDefender(table, playerId))
+            .with(true, () => true)
+            .otherwise(() => table.attack.length > 0)
         ),
-        log: `✅ ${getPlayerName(table, playerId)} closed the bout.`
-      })
-    )
-    .otherwise(() => err("🚫 Player rotation failed.", table));
-};
+    canEnd: canEndBout(table)
+  })
+    .with({ isPart: false }, () => err("Cannot end bout", table))
+    .with({ canEnd: false }, () => err("Cannot end bout", table))
+    .otherwise(() => {
+      const nextAttacker = table.players.find(
+        (p) => p.id === table.currentDefendId
+      );
+      const nDef = match(nextAttacker)
+        .with(P.nonNullable, (a) => getNextPlayer(table, a.id))
+        .otherwise(() => undefined);
+
+      return match({ nextAttacker, nextDefender: nDef })
+        .with(
+          { nextAttacker: P.nonNullable, nextDefender: P.nonNullable },
+          ({ nextAttacker, nextDefender }) => ({
+            type: "SUCCESS" as const,
+            table: refillHands(
+              {
+                ...table,
+                discardPile: [
+                  ...table.discardPile,
+                  ...table.attack,
+                  ...table.defense
+                ],
+                attack: [],
+                defense: [],
+                currentTurnId: nextAttacker.id,
+                currentDefendId: nextDefender.id
+              },
+              table.currentTurnId
+            ),
+            log: `✅ ${getPlayerName(table, playerId)} closed the bout.`
+          })
+        )
+        .otherwise(() => err("🚫 Player rotation failed.", table));
+    });
 
 export function processIntent(
   table: TableState,

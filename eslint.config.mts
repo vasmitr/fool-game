@@ -35,6 +35,7 @@ export default tseslint.config(
       "no-sparse-arrays": "error",
       "no-prototype-builtins": "error",
       "no-constant-binary-expression": "error",
+      "complexity": ["error", 2]
     },
   },
   {
@@ -42,7 +43,7 @@ export default tseslint.config(
     plugins: { json },
     language: "json/json",
     rules: {
-      "json/no-duplicate-keys": "error",
+      "json/no-duplicate-keys": "error"
     },
   },
   {

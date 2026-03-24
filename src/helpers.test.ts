@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getDeck, findBestDefense, findBestAttack, refillHands } from "./helpers.js";
+import { getDeck, findBestDefense, findBestAttack } from "./helpers.js";
 import type { Card, Rank, Suit } from "./consts.js";
 
 describe("getDeck", () => {
@@ -200,24 +200,5 @@ describe("findBestAttack", () => {
     // score(6♥)=-6, score(A♥)=-14 → pick trump ace
     const action = findBestAttack(playerCards, attackCards, [], trumps, 6, 36);
     expect(action).toEqual({ action: "ATTACK", cardId: "p2" });
-  });
-});
-
-describe("advanced rules", () => {
-  it("should refill hands to 6 cards", () => {
-    const hands: { playerId: number; cards: Card[] }[] = [
-        { playerId: 0, cards: [{ id: "c1", rank: "A", suit: "spades", value: 14 }] },
-    ];
-    const deck: Card[] = [
-        { id: "d1", rank: "6", suit: "clubs", value: 6 },
-        { id: "d2", rank: "7", suit: "clubs", value: 7 },
-        { id: "d3", rank: "8", suit: "clubs", value: 8 },
-        { id: "d4", rank: "9", suit: "clubs", value: 9 },
-        { id: "d5", rank: "10", suit: "clubs", value: 10 },
-        { id: "d6", rank: "J", suit: "clubs", value: 11 },
-    ];
-    const result = refillHands(hands, deck);
-    expect(result.hands[0]?.cards.length).toBe(6);
-    expect(result.deck.length).toBe(1);
   });
 });

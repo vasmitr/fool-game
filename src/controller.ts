@@ -1,44 +1,57 @@
 import { EMPTY, switchMap, merge } from "rxjs";
 import _ from "underscore";
+import { match, P } from "ts-pattern";
 import { table$, knowledgeSources, applyOutcome } from "./store.js";
 import type { KnowledgeSource } from "./store.js";
 import type { TableState, Intent } from "./rules.js";
 import { processIntent } from "./rules.js";
-import { isDefender, isPrimaryAttacker, hasUndefendedCards } from "./selectors.js";
+import {
+  isDefender,
+  isPrimaryAttacker,
+  hasUndefendedCards
+} from "./selectors.js";
 
 const applyIntent = (intent: Intent) => {
   const current = table$.value;
-  if (current.isGameOver) return;
-  applyOutcome(current, processIntent(current, intent));
+  return match(current.isGameOver)
+    .with(true, () => undefined)
+    .otherwise(() => applyOutcome(current, processIntent(current, intent)));
 };
 
 export const selectKS = (
   table: TableState,
   ksList: KnowledgeSource[] = knowledgeSources
-) =>
-  _.chain(ksList)
+) => {
+  const hasUndef = hasUndefendedCards(table);
+  return _.chain(ksList)
     .filter((ks) => ks.canAct(table))
-    .sortBy((ks) => {
-      if (hasUndefendedCards(table) && isDefender(table, ks.playerId)) return 0;
-      if (isPrimaryAttacker(table, ks.playerId)) return 1;
-      return 2;
-    })
+    .sortBy((ks) =>
+      match({
+        isDef: isDefender(table, ks.playerId),
+        isAtt: isPrimaryAttacker(table, ks.playerId),
+        hasUndef
+      })
+        .with({ hasUndef: true, isDef: true }, () => 0)
+        .with({ isAtt: true }, () => 1)
+        .otherwise(() => 2)
+    )
     .first()
     .value();
+};
 
 table$
   .pipe(
-    switchMap((table) => {
-      if (table.isGameOver) return EMPTY;
-      
-      const eligible = knowledgeSources.filter((ks) => ks.canAct(table));
-      if (eligible.length === 0) return EMPTY;
-
-      // Merge all eligible KS proposals. The first one to emit wins this "turn"
-      // and triggers a table$ update, which cancels all other pending proposals.
-      return merge(...eligible.map((ks) => ks.propose(table)));
-    })
+    switchMap((table) =>
+      match(table.isGameOver)
+        .with(true, () => EMPTY)
+        .otherwise(() => {
+          const eligible = knowledgeSources.filter((ks) => ks.canAct(table));
+          return match(eligible.length === 0)
+            .with(true, () => EMPTY)
+            .otherwise(() => merge(...eligible.map((ks) => ks.propose(table))));
+        })
+    )
   )
-  .subscribe((intent) => {
-    if (intent) applyIntent(intent);
-  });
+  .subscribe((intent) =>
+    match(intent).with(P.nonNullable, applyIntent).otherwise(() => undefined)
+  );
