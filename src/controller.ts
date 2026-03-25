@@ -41,17 +41,16 @@ export const selectKS = (
 
 table$
   .pipe(
-    switchMap((table) =>
-      match(table.isGameOver)
-        .with(true, () => EMPTY)
-        .otherwise(() => {
-          const eligible = knowledgeSources.filter((ks) => ks.canAct(table));
-          return match(eligible.length === 0)
-            .with(true, () => EMPTY)
-            .otherwise(() => merge(...eligible.map((ks) => ks.propose(table))));
-        })
-    )
+    switchMap((table: TableState) => {
+      const eligible = knowledgeSources.filter((ks) => ks.canAct(table));
+      return match([table.isGameOver, eligible])
+        .with([true, P._], () => EMPTY)
+        .with([P._, []], () => EMPTY)
+        .otherwise(() => merge(...eligible.map((ks) => ks.propose(table))));
+    })
   )
   .subscribe((intent) =>
-    match(intent).with(P.nonNullable, applyIntent).otherwise(() => undefined)
+    match(intent)
+      .with(P.nonNullable, applyIntent)
+      .otherwise(() => undefined)
   );

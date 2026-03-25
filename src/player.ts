@@ -11,6 +11,7 @@ import {
   isDefender,
   isPrimaryAttacker,
   canEndBout,
+  canThrowIn,
   hasUndefendedCards
 } from "./selectors.js";
 
@@ -20,9 +21,7 @@ const computeIntent = (playerId: number, table: TableState): Intent | null => {
   return match({
     isDefender: isDefender(table, playerId),
     isPrimary: isPrimaryAttacker(table, playerId),
-    canThrowIn:
-      table.attack.length > 0 &&
-      table.attack.length < getDefenderHandCount(table)
+    canThrowIn: canThrowIn(table)
   })
     .with({ isDefender: true }, () =>
       match(
@@ -39,7 +38,7 @@ const computeIntent = (playerId: number, table: TableState): Intent | null => {
         .otherwise((s) => ({ action: s.action, playerId, cardId: s.cardId }))
     )
     .with({ isPrimary: true }, () =>
-      match(
+      match([
         findBestAttack(
           myHand,
           table.attack,
@@ -47,18 +46,16 @@ const computeIntent = (playerId: number, table: TableState): Intent | null => {
           table.trumps,
           getDefenderHandCount(table),
           table.deck.length
-        )
-      )
-        .with(P.nonNullable, (s) => ({
+        ),
+        canEndBout(table)
+      ])
+        .with([P.nonNullable, P._], ([s]) => ({
           action: "ATTACK" as const,
           playerId,
           cardId: s.cardId
         }))
-        .otherwise(() =>
-          match(canEndBout(table))
-            .with(true, () => ({ action: "BEATEN" as const, playerId }))
-            .otherwise(() => null)
-        )
+        .with([P._, true], () => ({ action: "BEATEN" as const, playerId }))
+        .otherwise(() => null)
     )
     .with({ canThrowIn: true }, () =>
       match(
@@ -87,31 +84,25 @@ const canAct =
     match({
       isGameOver: table.isGameOver,
       isDefender: isDefender(table, playerId),
-      isHuman: playerId === 0
+      isHuman: playerId === 0,
+      isPrimary: isPrimaryAttacker(table, playerId),
+      canThrowIn: canThrowIn(table)
     })
       .with({ isGameOver: true }, () => false)
       .with({ isDefender: true }, () => hasUndefendedCards(table))
-      .with({ isHuman: true }, () =>
-        match({
-          isPrimary: isPrimaryAttacker(table, playerId),
-          canThrowIn:
-            table.attack.length > 0 &&
-            table.attack.length < getDefenderHandCount(table)
-        })
-          .with({ isPrimary: true }, () => true)
-          .with({ canThrowIn: true }, () => true)
-          .otherwise(() => false)
-      )
-      .otherwise(() =>
-        match(computeIntent(playerId, table)).with(P.nonNullable, () => true).otherwise(() => false)
-      );
+      .with({ isHuman: true, isPrimary: true }, () => true)
+      .with({ isHuman: true, canThrowIn: true }, () => true)
+      .with({ isHuman: true }, () => false)
+      .otherwise(() => computeIntent(playerId, table) !== null);
 
 const propose =
   (playerId: number) =>
   (table: TableState): Observable<Intent | null> =>
-    match(playerId === 0)
-      .with(true, () => intent$.pipe(first()))
-      .otherwise(() => of(computeIntent(playerId, table)).pipe(delay(AI_DELAY_MS)));
+    match(playerId)
+      .with(0, () => intent$.pipe(first())) // Human player
+      .otherwise(() =>
+        of(computeIntent(playerId, table)).pipe(delay(AI_DELAY_MS))
+      );
 
 _.chain([0, 1, 2, 3]).each((id) => {
   registerKS({

@@ -25,6 +25,68 @@ table.hands.find(h => h.playerId === table.currentDefendId)?.cards.length
 getDefenderHandCount(table)
 ```
 
+Any derived fact about `TableState` — including compound conditions — belongs in `selectors.ts`, not inlined in rules or handlers.
+
+```ts
+// bad — complex predicate inlined in rules.ts
+match({ isAtt: isAttacker(table, playerId), isDef: isDefender(table, playerId), len: table.attack.length })
+  .with({ isAtt: true }, () => true)
+  .with({ isDef: true }, () => true)
+  .with({ len: P.number.gt(0) }, () => true)
+  .otherwise(() => false)
+
+// good — extracted to selectors.ts as isBoutParticipant(table, playerId)
+```
+
+### Match on values and shapes, not booleans
+
+```ts
+// bad — wraps a comparison in a boolean match
+match(h.playerId === playerId)
+  .with(true, () => ({ ...h, cards: updater(h.cards) }))
+  .otherwise(() => h)
+
+// good — match on the value directly
+match(h.playerId)
+  .with(playerId, () => ({ ...h, cards: updater(h.cards) }))
+  .otherwise(() => h)
+```
+
+```ts
+// bad — nested match just to sequence two early-returns
+match(table.isGameOver)
+  .with(true, () => EMPTY)
+  .otherwise(() => {
+    const eligible = knowledgeSources.filter((ks) => ks.canAct(table));
+    return match(eligible)
+      .with([], () => EMPTY)
+      .otherwise(() => merge(...eligible.map((ks) => ks.propose(table))));
+  })
+
+// good — flat array pattern, both conditions in one match
+const eligible = knowledgeSources.filter((ks) => ks.canAct(table));
+match([table.isGameOver, eligible])
+  .with([true, P._], () => EMPTY)
+  .with([P._, []], () => EMPTY)
+  .otherwise(() => merge(...eligible.map((ks) => ks.propose(table))))
+```
+
+```ts
+// bad — nested boolean chains
+match(isParticipant(table, playerId))
+  .with(true, () =>
+    match(isDefender(table, playerId))
+      .with(false, () => true)
+      .otherwise(() => false)
+  )
+  .otherwise(() => false)
+
+// good — compose conditions into a single shape match
+match({ len: table.attack.length, isPart: isParticipant(table, playerId), isDef: isDefender(table, playerId) })
+  .with({ len: P.number.gt(0), isPart: true, isDef: false }, () => true)
+  .otherwise(() => false)
+```
+
 ### Use match chains, not if/switch
 ```ts
 // bad

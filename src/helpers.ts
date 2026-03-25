@@ -2,6 +2,7 @@ import { shuffle, uniqueId } from "underscore";
 import _ from "underscore";
 import { match, P } from "ts-pattern";
 import { rankValues, suits, Card, Rank } from "./consts.js";
+import { canBeat } from "./selectors.js";
 
 export function getDeck(): Card[] {
   return shuffle(
@@ -17,16 +18,22 @@ export function cardScore(
   deckSize: number,
   dir: number
 ): number {
-  const trumpPenalty = match(dir < 0)
-    .with(true, () => 0)
+  const trumpPenalty = match(dir)
+    .with(P.number.lt(0), () => 0)
     .otherwise(() => (deckSize / 36) * 14);
 
-  const isTrump = match(c.suit === trumps.suit)
-    .with(true, () => trumpPenalty)
+  const isTrump = match(c.suit)
+    .with(trumps.suit, () => trumpPenalty)
     .otherwise(() => 0);
 
   return dir * c.value + isTrump;
 }
+
+const getValidDefenses = (hand: Card[], target: Card, trumpSuit: string): Card[] =>
+  hand.filter((c) => canBeat(c, target, trumpSuit));
+
+const getSameRankCards = (hand: Card[], rank: string): Card[] =>
+  hand.filter((c) => c.rank === rank);
 
 const getBestValidDefense = (validDefenses: Card[], trumps: Card, deckSize: number) =>
   match(_.chain(validDefenses).sortBy((c) => cardScore(c, trumps, deckSize, 1)).value()[0])
@@ -46,24 +53,18 @@ export function findBestDefense(
   return match(cardToDefend)
     .with(P.nullish, () => null)
     .with(P.nonNullable, (target) => {
-      const validDefenses = playerCards.filter(
-        (c) =>
-          match(c.value > target.value).with(true, () => c.suit === target.suit).otherwise(() => false) ||
-          match(c.suit === trumps.suit).with(true, () => target.suit !== trumps.suit).otherwise(() => false)
-      );
-
-      return match(validDefenses.length > 0)
-        .with(true, () => getBestValidDefense(validDefenses, trumps, deckSize))
-        .otherwise(() =>
-          match(playerCards.filter((c) => c.rank === target.rank))
-            .with(
-              P.when((cards) => match(cards.length > 0).with(true, () => defenseCards.length === 0).otherwise(() => false)),
-              (cards) => match(cards[0])
-                .with(P.nonNullable, (c) => ({ action: "PASS" as const, cardId: c.id }))
-                .otherwise(() => ({ action: "TAKE" as const, cardId: target.id }))
-            )
-            .otherwise(() => ({ action: "TAKE" as const, cardId: target.id }))
-        );
+      const validDefenses = getValidDefenses(playerCards, target, trumps.suit);
+      const passCards = getSameRankCards(playerCards, target.rank);
+      return match({ validDefenses, passCards, defenseCards })
+        .with(
+          { validDefenses: P.when((v) => v.length > 0) },
+          ({ validDefenses }) => getBestValidDefense(validDefenses, trumps, deckSize)
+        )
+        .with(
+          { passCards: P.when((p) => p.length > 0), defenseCards: [] },
+          ({ passCards }) => ({ action: "PASS" as const, cardId: passCards[0]!.id })
+        )
+        .otherwise(() => ({ action: "TAKE" as const, cardId: target.id }));
     })
     .exhaustive();
 }
@@ -92,20 +93,20 @@ export function findBestAttack(
         [...attackCards, ...defenseCards].map((c) => c.rank)
       );
 
-      const validCards = match(attackCards.length === 0)
-        .with(true, () => playerCards)
+      const validCards = match(attackCards)
+        .with([], () => playerCards)
         .otherwise(() => playerCards.filter((c) => boutRanks.has(c.rank)));
 
-      return match(validCards.length === 0)
-        .with(true, () => null)
+      return match(validCards)
+        .with([], () => null)
         .otherwise(() => {
-          const dir = match(attackCards.length > defenseCards.length)
-            .with(true, () => -1)
+          const dir = match(attackCards.length)
+            .with(P.number.gt(defenseCards.length), () => -1)
             .otherwise(() => 1);
 
           const nonTrumps = validCards.filter((c) => c.suit !== trumps.suit);
-          const candidates = match(nonTrumps.length > 0)
-            .with(true, () => nonTrumps)
+          const candidates = match(nonTrumps.length)
+            .with(P.number.gt(0), () => nonTrumps)
             .otherwise(() => validCards);
 
           return selectBestAttack(candidates, trumps, deckSize, dir);
