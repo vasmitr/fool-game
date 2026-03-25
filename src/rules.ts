@@ -57,16 +57,14 @@ export type ActionOutcome = {
 
 // --- HELPERS ---
 
-const updateHand =
-  (playerId: number, updater: (cards: Card[]) => Card[]) =>
-  (table: TableState): TableState => ({
-    ...table,
-    hands: table.hands.map((h) =>
-      match(h.playerId)
-        .with(playerId, () => ({ ...h, cards: updater(h.cards) }))
-        .otherwise(() => h)
-    )
-  });
+const updateHand = (table: TableState, playerId: number, updater: (cards: Card[]) => Card[]): TableState => ({
+  ...table,
+  hands: table.hands.map((h) =>
+    match(h.playerId)
+      .with(playerId, () => ({ ...h, cards: updater(h.cards) }))
+      .otherwise(() => h)
+  )
+});
 
 type RefillAcc = { deck: Card[]; updates: Record<number, Card[]> };
 
@@ -140,9 +138,9 @@ const handleAttack = (
     )
     .with({ card: P.nonNullable }, ({ card }) => ({
       type: "SUCCESS" as const,
-      table: updateHand(playerId, (cards) =>
+      table: updateHand({ ...table, attack: [...table.attack, card] }, playerId, (cards) =>
         cards.filter((c) => c.id !== cardId)
-      )({ ...table, attack: [...table.attack, card] }),
+      ),
       log: `⚔️ ${getPlayerName(table, playerId)} plays ${card.rank}${card.suit[0]} (ATTACK)`
     }))
     .exhaustive();
@@ -166,9 +164,9 @@ const handleDefend = (
     )
     .with({ card: P.nonNullable, target: P.nonNullable }, ({ card }) => ({
       type: "SUCCESS" as const,
-      table: updateHand(playerId, (cards) =>
+      table: updateHand({ ...table, defense: [...table.defense, card] }, playerId, (cards) =>
         cards.filter((c) => c.id !== cardId)
-      )({ ...table, defense: [...table.defense, card] }),
+      ),
       log: `🛡️ ${getPlayerName(table, playerId)} plays ${card.rank}${card.suit[0]} (DEFEND)`
     }))
     .exhaustive();
@@ -191,9 +189,9 @@ const handlePass = (
       () => err("🚫 Cannot transfer.", table)
     )
     .with({ card: P.nonNullable, nextDefender: P.nonNullable }, ({ card, nextDefender }) => {
-      const postPass = updateHand(playerId, (cards) =>
+      const postPass = updateHand(table, playerId, (cards) =>
         cards.filter((c) => c.id !== cardId)
-      )(table);
+      );
       return {
         type: "SUCCESS" as const,
         table: {
@@ -217,7 +215,7 @@ const handleTake = (table: TableState, playerId: number): ActionOutcome => {
     .with({ isDef: false }, () => err("🚫 Only defender can take cards.", table))
     .with({ nextAttacker: P.nonNullable, nextDefender: P.nonNullable }, ({ nextAttacker, nextDefender }) => {
       const allCards = [...table.attack, ...table.defense];
-      const postTake = updateHand(playerId, (cards) => [...cards, ...allCards])(table);
+      const postTake = updateHand(table, playerId, (cards) => [...cards, ...allCards]);
       return {
         type: "SUCCESS" as const,
         table: refillHands(
