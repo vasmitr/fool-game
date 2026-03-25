@@ -52,21 +52,28 @@ const recordCardPosition = (el: HTMLDivElement, id: string) => {
   setTimeout(() => cardRegistry.delete(id), 1000);
 };
 
+const mountCardEffect = (ref: HTMLDivElement, card: CardType | undefined) => {
+  if (!card) return;
+  const lastRect = cardRegistry.get(card.id);
+  requestAnimationFrame(() => animateCard(ref, card.id, lastRect));
+};
+
+const cleanupCardEffect = (ref: HTMLDivElement, card: CardType | undefined) => {
+  if (!card) return;
+  recordCardPosition(ref, card.id);
+};
+
 export function Card(props: CardProps) {
   let cardRef: HTMLDivElement | undefined;
 
   onMount(() => {
     if (!cardRef) return;
-    const id = props.card.id;
-    const lastRect = cardRegistry.get(id);
-    requestAnimationFrame(() => {
-      if (!cardRef) return;
-      animateCard(cardRef, id, lastRect);
-    });
+    mountCardEffect(cardRef, props.card);
   });
 
   onCleanup(() => {
-    if (cardRef) recordCardPosition(cardRef, props.card.id);
+    if (!cardRef) return;
+    cleanupCardEffect(cardRef, props.card);
   });
 
   const isRed = () => props.card.suit === 'hearts' || props.card.suit === 'diamonds';
@@ -75,6 +82,7 @@ export function Card(props: CardProps) {
     <div
       ref={(el) => { cardRef = el; }}
       onClick={getCardClick(props.onClick, props.card)}
+      data-card-id={props.card?.id}
       style={{
         cursor: cardCursorStyle(props.onClick)
       }}

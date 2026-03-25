@@ -1,7 +1,7 @@
-import { EMPTY, switchMap, merge } from "rxjs";
+import { EMPTY, switchMap } from "rxjs";
 import _ from "underscore";
 import { match, P } from "ts-pattern";
-import { table$, knowledgeSources, applyOutcome } from "./store.js";
+import { table$, intent$, knowledgeSources, applyOutcome } from "./store.js";
 import type { KnowledgeSource } from "./store.js";
 import type { TableState, Intent } from "./types.js";
 import { processIntent } from "./rules.js";
@@ -36,17 +36,28 @@ export const selectKS = (
         .otherwise(() => 2)
     )
     .first()
-    .value();
+    .value() as KnowledgeSource | undefined;
 };
 
+// Handle human intents directly and independently for UI responsiveness
+intent$.subscribe((intent) => {
+  applyIntent(intent);
+});
+
+// AI Controller Loop: Serializes AI actions to prevent race conditions
 table$
   .pipe(
     switchMap((table: TableState) => {
-      const eligible = knowledgeSources.filter((ks) => ks.canAct(table));
-      return match([table.isGameOver, eligible])
-        .with([true, P._], () => EMPTY)
-        .with([P._, []], () => EMPTY)
-        .otherwise(() => merge(...eligible.map((ks) => ks.propose(table))));
+      const ks = selectKS(table);
+      
+      return match({ isGameOver: table.isGameOver, ks })
+        .with({ isGameOver: true }, () => EMPTY)
+        .with({ ks: P.nullish }, () => EMPTY)
+        // If human (0) has priority, wait for them (AI loop yields)
+        .with({ ks: { playerId: 0 } }, () => EMPTY)
+        // Otherwise, let the selected AI agent propose their action
+        .with({ ks: P.nonNullable }, ({ ks: selected }) => selected.propose(table))
+        .exhaustive();
     })
   )
   .subscribe((intent) =>

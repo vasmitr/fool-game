@@ -27,3 +27,4 @@ export type KnowledgeSource = {
 
 export const knowledgeSources: KnowledgeSource[] = [];
 export const registerKS = (ks: KnowledgeSource) => knowledgeSources.push(ks);
+

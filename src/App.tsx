@@ -172,7 +172,7 @@ export default function App() {
       {/* Center Center Playing Area */}
       <div class="relative w-full max-w-5xl h-80 border border-outline-variant/15 rounded-[3rem] flex items-center justify-center bg-surface-container/10 backdrop-blur-sm">
         {/* Table Cards Area */}
-        <div class="flex gap-14 relative px-12 items-center">
+        <div data-testid="table-cards" class="flex gap-14 relative px-12 items-center">
           <For each={state().attack}>
             {(card, i) => (
               <div class="relative w-28 h-40 flex-shrink-0">

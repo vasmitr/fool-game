@@ -5,7 +5,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "vitest run",
+    "test": "vitest run src/",
+    "test:e2e": "playwright test",
     "dev": "vite",
     "start": "vite",
     "build": "vite build",
@@ -32,6 +33,7 @@
     "@eslint/js": "^10.0.1",
     "@eslint/json": "^1.2.0",
     "@eslint/markdown": "^7.5.1",
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/vite": "^4.2.2",
     "@types/node": "^25.5.0",
     "@types/underscore": "^1.13.0",

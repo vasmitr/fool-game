@@ -3,6 +3,7 @@ import App from './App.jsx';
 import './index.css';
 import './player.js';
 import './controller.js';
+import './test-bridge.js';
 
 const root = document.getElementById('root');
 

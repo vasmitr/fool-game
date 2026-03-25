@@ -22,4 +22,4 @@ export interface Card {
   suit: Suit;
 }
 
-export const AI_DELAY_MS = 3000;
+export const AI_DELAY_MS = typeof window !== "undefined" && window.location.search.includes("fast=1") ? 10 : 3000;
