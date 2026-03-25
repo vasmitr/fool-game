@@ -3,7 +3,7 @@ import _ from "underscore";
 import { match, P } from "ts-pattern";
 import { table$, knowledgeSources, applyOutcome } from "./store.js";
 import type { KnowledgeSource } from "./store.js";
-import type { TableState, Intent } from "./rules.js";
+import type { TableState, Intent } from "./types.js";
 import { processIntent } from "./rules.js";
 import {
   isDefender,

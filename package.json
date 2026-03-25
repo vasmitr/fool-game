@@ -37,6 +37,7 @@
     "@types/underscore": "^1.13.0",
     "autoprefixer": "^10.4.27",
     "eslint": "^10.1.0",
+    "eslint-plugin-import-x": "^4.16.2",
     "globals": "^17.4.0",
     "husky": "^9.1.7",
     "jiti": "^2.6.1",

@@ -1,7 +1,6 @@
 import { createSignal, onMount, For, Show, createEffect } from "solid-js";
-import { table$, log$, intent$, resetGame } from "./store.js";
-import type { TableState, Player, Hand as HandType } from "./rules.js";
-import type { Card as CardType } from "./consts.js";
+import { table$, intent$, resetGame } from "./store.js";
+import type { TableState, Hand as HandType } from "./types.js";
 import { Card } from "./components/Card.jsx";
 import { Hand } from "./components/Hand.jsx";
 import { Log } from "./components/Log.jsx";
@@ -14,20 +13,55 @@ const avatars = [
   "/avatars/nikola_tesla.png"
 ];
 
-const getSuitEmoji = (suit: string) => {
-  switch (suit) {
-    case "hearts":
-      return "♥";
-    case "diamonds":
-      return "♦";
-    case "clubs":
-      return "♣";
-    case "spades":
-      return "♠";
-    default:
-      return "";
-  }
+const themeIcon = (t: string) => t === "midnight" ? "light_mode" : "dark_mode";
+
+const boutLabel = (table: TableState) => allDefended(table) ? "End Turn / Bito" : "Pass";
+
+const isDefenderWithAttack = (table: TableState) =>
+  table.currentDefendId === 0 && table.attack.length > 0;
+
+const humanCards = (table: TableState) => {
+  const hand = table.hands.find((h) => h.playerId === 0);
+  return hand ? hand.cards : [];
 };
+
+const isHumanWinner = (table: TableState) => table.winner === table.players[0]?.name;
+
+const winnerHeadingClass = (table: TableState) =>
+  isHumanWinner(table) ? "text-primary" : "text-error";
+
+const winnerLabel = (table: TableState) =>
+  isHumanWinner(table) ? "CONQUERED" : "OVERCOME";
+
+const getAttackerLabel = (id: number, name: string) =>
+  id === 0 ? "YOUR TURN" : `${name}'S TURN`;
+
+const getActiveTurnMsg = (s: TableState) => {
+  const attacker = s.players.find((p) => p.id === s.currentTurnId);
+  return attacker ? getAttackerLabel(s.currentTurnId, attacker.name) : null;
+};
+
+const getTurnMsg = (s: TableState) => s.attack.length > 0 ? null : getActiveTurnMsg(s);
+
+const killTween = (ref: HTMLDivElement | undefined) => {
+  if (ref) gsap.killTweensOf(ref);
+};
+
+const scheduleNoticeAnim = (ref: HTMLDivElement, target: HTMLDivElement | undefined) => {
+  if (!target) return;
+  gsap.timeline().to(ref, { delay: 0.8, y: -window.innerHeight / 2 + 40, scale: 0.6, duration: 0.8, ease: "expo.out" });
+};
+
+const isActiveOrDef = (isActive: boolean, isDef: boolean) => isActive || isDef;
+
+const opponentRingClass = (active: boolean) =>
+  active ? "ring-4 ring-primary/40 ring-offset-4 ring-offset-surface" : "border-2 border-outline-variant/30";
+
+const opponentNameClass = (active: boolean) => active ? "text-primary" : "text-on-surface";
+
+const avatarSrc = (index: number) => avatars[index] || "https://i.pravatar.cc/100";
+
+const handCardCount = (hand: HandType | undefined) => hand ? hand.cards.length : 0;
 
 export default function App() {
   const [state, setState] = createSignal<TableState>(table$.value);
@@ -49,37 +83,14 @@ export default function App() {
   // Turn Notification with Spatial "Stay" Animation
   createEffect(() => {
     const s = state();
-    if (s.attack.length > 0) return; // Only show on NEW bouts
-
-    const activeId = s.currentTurnId;
-    const attacker = s.players.find((p) => p.id === activeId);
-    if (!attacker) return;
-
-    const msg = activeId === 0 ? "YOUR TURN" : `${attacker.name}'S TURN`;
-
-    // Interrupt existing animations
-    if (noticeRef) gsap.killTweensOf(noticeRef);
-
+    const msg = getTurnMsg(s);
+    if (!msg) return;
+    killTween(noticeRef);
     setNotice(msg);
-
+    const activeId = s.currentTurnId;
     requestAnimationFrame(() => {
-      if (noticeRef) {
-        const targetRef = avatarRefs.get(activeId);
-        if (targetRef) {
-          const targetRect = targetRef.getBoundingClientRect();
-          const noticeRect = noticeRef.getBoundingClientRect();
-
-          // GSAP: Center to Fixed Top Bar
-          const tl = gsap.timeline();
-          tl.to(noticeRef, {
-            delay: 0.8,
-            y: -window.innerHeight / 2 + 40, // Perfectly aligned with Top Bar buttons
-            scale: 0.6,
-            duration: 0.8,
-            ease: "expo.out"
-          });
-        }
-      }
+      if (!noticeRef) return;
+      scheduleNoticeAnim(noticeRef, avatarRefs.get(activeId));
     });
   });
 
@@ -107,7 +118,7 @@ export default function App() {
             class="w-10 h-10 flex items-center justify-center rounded-full border border-white/10 bg-surface-container-low/50 text-primary hover:text-white hover:bg-surface-container-high/50 transition-all shadow-lg group"
           >
             <span class="material-symbols-outlined text-xl">
-              {theme() === "midnight" ? "light_mode" : "dark_mode"}
+              {themeIcon(theme())}
             </span>
           </button>
           <button
@@ -124,8 +135,10 @@ export default function App() {
         <For each={state().players.filter((p) => p.id !== 0)}>
           {(player, i) => {
             const hand = state().hands.find((h) => h.playerId === player.id);
-            const isActive = state().currentTurnId === player.id;
-            const isDefender = state().currentDefendId === player.id;
+            const active = isActiveOrDef(
+              state().currentTurnId === player.id,
+              state().currentDefendId === player.id
+            );
 
             return (
               <div
@@ -133,23 +146,22 @@ export default function App() {
                 class="flex flex-col items-center gap-2"
               >
                 <div
-                  class={`relative p-1 rounded-full ${isActive || isDefender ? "ring-4 ring-primary/40 ring-offset-4 ring-offset-surface" : "border-2 border-outline-variant/30"}`}
+                  class={`relative p-1 rounded-full ${opponentRingClass(active)}`}
                 >
                   <img
                     class="w-20 h-20 rounded-full bg-surface-container-low object-cover shadow-2xl"
-                    src={avatars[i()] || "https://i.pravatar.cc/100"}
+                    src={avatarSrc(i())}
                   />
                   <div class="absolute -bottom-1 -right-1 bg-primary text-on-primary text-xs font-bold px-2 py-1 rounded-full shadow-lg">
-                    {hand?.cards.length || 0}
+                    {handCardCount(hand)}
                   </div>
                 </div>
                 <div class="flex flex-col items-center">
                   <span
-                    class={`font-headline text-sm font-bold tracking-tight ${isActive || isDefender ? "text-primary" : "text-on-surface"}`}
+                    class={`font-headline text-sm font-bold tracking-tight ${opponentNameClass(active)}`}
                   >
                     {player.name}
                   </span>
-                  {/* Redundant 'Attacking/Defending' label removed - only the flying notice will dock here */}
                 </div>
               </div>
             );
@@ -216,10 +228,9 @@ export default function App() {
         class="w-full flex flex-col items-center gap-6 pb-6 z-20"
       >
         <div class="flex flex-col items-center gap-3 h-12">
-          {/* No redundant status badge here - only the flying notice will land here */}
           <Show when={isHumanTurn()}>
             <div class="flex gap-6">
-              <Show when={state().currentDefendId === 0 && state().attack.length > 0}>
+              <Show when={isDefenderWithAttack(state())}>
                 <button
                   onClick={() => intent$.next({ action: "TAKE", playerId: 0 })}
                   class="px-10 py-4 bg-secondary-container text-on-secondary-container rounded-full font-headline font-bold text-xs uppercase tracking-widest border border-white/5 hover:scale-105 transition-all active:scale-95 shadow-2xl disabled:opacity-20 flex items-center gap-2"
@@ -232,14 +243,12 @@ export default function App() {
                 disabled={!canEndBout(state())}
                 class="px-12 py-4 bg-primary text-on-primary rounded-full font-headline font-bold text-xs uppercase tracking-widest hover:scale-105 transition-all active:scale-95 shadow-[0_0_30px_rgba(186,195,255,0.3)] disabled:opacity-20 flex items-center gap-2"
               >
-                {allDefended(state()) ? "End Turn / Bito" : "Pass"}
+                {boutLabel(state())}
               </button>
             </div>
           </Show>
         </div>
-        <Hand
-          cards={state().hands.find((h) => h.playerId === 0)?.cards || []}
-        />
+        <Hand cards={humanCards(state())} />
       </div>
 
       <Log />
@@ -248,7 +257,7 @@ export default function App() {
       <Show when={notice()}>
         <div class="fixed inset-0 pointer-events-none flex items-center justify-center z-[200]">
           <div
-            ref={noticeRef}
+            ref={(el) => { noticeRef = el; }}
             class="relative bg-primary px-10 py-3 skew-x-[-15deg] shadow-[0_20px_50px_rgba(0,0,0,0.4)] border-r-8 border-white/30"
           >
             <div class="absolute inset-0 bg-white/10 skew-x-[15deg] pointer-events-none"></div>
@@ -264,11 +273,9 @@ export default function App() {
         <div class="fixed inset-0 bg-surface/80 backdrop-blur-3xl z-[250] flex flex-col items-center justify-center p-20 select-none">
           <div class="flex flex-col items-center max-w-2xl text-center space-y-8">
             <h1
-              class={`text-8xl font-black tracking-tighter uppercase ${state().winner === state().players[0]?.name ? "text-primary" : "text-error"}`}
+              class={`text-8xl font-black tracking-tighter uppercase ${winnerHeadingClass(state())}`}
             >
-              {state().winner === state().players[0]?.name
-                ? "CONQUERED"
-                : "OVERCOME"}
+              {winnerLabel(state())}
             </h1>
             <div class="text-xl text-on-surface/80 italic font-headline uppercase tracking-widest">
               {state().winner} IS THE MASTER

@@ -1,6 +1,7 @@
 import js from "@eslint/js";
 import globals from "globals";
 import tseslint from "typescript-eslint";
+import importX from "eslint-plugin-import-x";
 import json from "@eslint/json";
 import markdown from "@eslint/markdown";
 import css from "@eslint/css";
@@ -17,8 +18,9 @@ export default tseslint.config(
     ],
   },
   {
-    files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],
+    files: ["**/*.{js,mjs,cjs,ts,mts,cts,tsx}"],
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    plugins: { "import-x": importX },
     languageOptions: {
       globals: {
         ...globals.browser,
@@ -35,7 +37,11 @@ export default tseslint.config(
       "no-sparse-arrays": "error",
       "no-prototype-builtins": "error",
       "no-constant-binary-expression": "error",
-      "complexity": ["error", 2]
+      "complexity": ["error", 2],
+      "import-x/no-unused-modules": ["error", {
+        unusedExports: true,
+        suppressMissingFileEnumeratorAPIWarning: true,
+      }],
     },
   },
   {

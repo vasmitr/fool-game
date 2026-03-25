@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { match } from "ts-pattern";
 import * as rules from "./rules.js";
-import { TableState, Intent, Hand, refillHands } from "./rules.js";
+import type { TableState, Intent, Hand, ActionOutcome } from "./types.js";
+import { refillHands } from "./transforms.js";
 import { Card, Rank } from "./consts.js";
 
 describe("Durak Rules Engine", () => {
@@ -126,7 +127,7 @@ describe("Durak Rules Engine", () => {
       .otherwise(() => undefined);
   });
 
-  function getSuccessTable(outcome: rules.ActionOutcome): TableState {
+  function getSuccessTable(outcome: ActionOutcome): TableState {
     return match(outcome)
       .with({ type: "SUCCESS" }, (o) => o.table)
       .otherwise(() => {

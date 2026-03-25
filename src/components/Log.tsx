@@ -26,7 +26,7 @@ export function Log() {
         <span class="material-symbols-outlined text-sm text-on-surface-variant group-hover:rotate-180 transition-transform cursor-pointer">unfold_less</span>
       </div>
       <div 
-        ref={listRef}
+        ref={(el) => { listRef = el; }}
         class="space-y-2 max-h-40 overflow-y-auto pr-2 scrollbar-hide opacity-80"
       >
         <For each={messages()}>

@@ -3,7 +3,7 @@ import { match, P } from "ts-pattern";
 import _ from "underscore";
 import { registerKS, intent$ } from "./store.js";
 import { findBestDefense, findBestAttack } from "./helpers.js";
-import type { TableState, Intent } from "./rules.js";
+import type { TableState, Intent } from "./types.js";
 import { AI_DELAY_MS } from "./consts.js";
 import {
   getHand,

@@ -12,7 +12,7 @@ export function getDeck(): Card[] {
   );
 }
 
-export function cardScore(
+function cardScore(
   c: Card,
   trumps: Card,
   deckSize: number,

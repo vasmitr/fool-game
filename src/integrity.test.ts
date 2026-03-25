@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import _ from "underscore";
 import { match, P } from "ts-pattern";
-import { TableState, processIntent, Hand, ActionOutcome } from "./rules.js";
+import type { TableState, Hand, ActionOutcome } from "./types.js";
+import { processIntent } from "./rules.js";
 import { getDeck } from "./helpers.js";
 import { Card, suits } from "./consts.js";
 import { canBeat, getHand } from "./selectors.js";

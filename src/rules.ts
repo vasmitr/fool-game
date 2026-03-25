@@ -1,7 +1,7 @@
-import _ from "underscore";
 import { match, P } from "ts-pattern";
 
-import { Card } from "./consts.js";
+import type { TableState, Intent, ActionOutcome } from "./types.js";
+import { updateHand, refillHands } from "./transforms.js";
 import {
   getCard,
   getCardToDefend,
@@ -16,98 +16,6 @@ import {
   canBeat
 } from "./selectors.js";
 
-export interface Hand {
-  playerId: number;
-  cards: Card[];
-}
-
-export interface Player {
-  id: number;
-  name: string;
-}
-
-export interface TableState {
-  deck: Card[];
-  trumps: Card;
-  players: Player[];
-  hands: Hand[];
-  attack: Card[];
-  defense: Card[];
-  discardPile: Card[];
-  currentTurnId: number;
-  currentDefendId: number;
-  isGameOver: boolean;
-  winner: string | null;
-}
-
-export type GameAction = "ATTACK" | "DEFEND" | "PASS" | "TAKE" | "BEATEN";
-
-export interface Intent {
-  type?: string;
-  action: GameAction;
-  playerId: number;
-  cardId?: string;
-}
-
-export type ActionOutcome = {
-  type: "SUCCESS" | "ERROR" | "GAME_OVER";
-  table: TableState;
-  log: string;
-};
-
-// --- HELPERS ---
-
-const updateHand = (table: TableState, playerId: number, updater: (cards: Card[]) => Card[]): TableState => ({
-  ...table,
-  hands: table.hands.map((h) =>
-    match(h.playerId)
-      .with(playerId, () => ({ ...h, cards: updater(h.cards) }))
-      .otherwise(() => h)
-  )
-});
-
-type RefillAcc = { deck: Card[]; updates: Record<number, Card[]> };
-
-const refillPlayerHand = (acc: RefillAcc, hand: Hand): RefillAcc => {
-  const needed = Math.max(0, 6 - hand.cards.length);
-  const draw = acc.deck.slice(0, needed);
-  return {
-    deck: acc.deck.slice(needed),
-    updates: { ...acc.updates, [hand.playerId]: [...hand.cards, ...draw] }
-  };
-};
-
-export const refillHands = (
-  table: TableState,
-  startingPlayerId: number
-): TableState => {
-  const startIndex = table.hands.findIndex(
-    (h) => h.playerId === startingPlayerId
-  );
-  return match(startIndex)
-    .with(-1, () => table)
-    .otherwise(() => {
-      const n = table.hands.length;
-      const { deck, updates } = _.chain(table.hands)
-        .sortBy((_, i) => (i - startIndex + n) % n)
-        .reduce(refillPlayerHand, {
-          deck: table.deck,
-          updates: {} as Record<number, Card[]>
-        })
-        .value();
-
-      return {
-        ...table,
-        deck,
-        hands: table.hands.map((h) => ({
-          ...h,
-          cards: match(updates[h.playerId])
-            .with(P.nonNullable, (c) => c)
-            .otherwise(() => h.cards)
-        }))
-      };
-    });
-};
 
 const err = (log: string, table: TableState): ActionOutcome => ({
   type: "ERROR",

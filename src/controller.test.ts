@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { of } from "rxjs";
 import { selectKS } from "./controller.js";
 import type { KnowledgeSource } from "./store.js";
-import type { TableState } from "./rules.js";
+import type { TableState } from "./types.js";
 import type { Card } from "./consts.js";
 
 const card = (id: string): Card => ({ id, rank: "6", suit: "clubs", value: 6 });

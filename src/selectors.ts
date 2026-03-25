@@ -1,5 +1,5 @@
 import { match, P } from "ts-pattern";
-import type { TableState } from "./rules.js";
+import type { TableState } from "./types.js";
 import type { Card } from "./consts.js";
 
 export const getHand = (table: TableState, playerId: number): Card[] =>
