@@ -8,14 +8,16 @@ import { canEndBout, allDefended } from "./selectors.js";
 import gsap from "gsap";
 
 const avatars = [
-  "/avatars/marie_curie.png",
-  "/avatars/isaac_newton.png",
-  "/avatars/nikola_tesla.png"
+  `${import.meta.env.BASE_URL}avatars/marie_curie.png`,
+  `${import.meta.env.BASE_URL}avatars/isaac_newton.png`,
+  `${import.meta.env.BASE_URL}avatars/nikola_tesla.png`,
 ];
 
-const themeIcon = (t: string) => t === "midnight" ? "light_mode" : "dark_mode";
+const themeIcon = (t: string) =>
+  t === "midnight" ? "light_mode" : "dark_mode";
 
-const boutLabel = (table: TableState) => allDefended(table) ? "End Turn / Bito" : "Pass";
+const boutLabel = (table: TableState) =>
+  allDefended(table) ? "End Turn / Bito" : "Pass";
 
 const isDefenderWithAttack = (table: TableState) =>
   table.currentDefendId === 0 && table.attack.length > 0;
@@ -25,7 +27,8 @@ const humanCards = (table: TableState) => {
   return hand ? hand.cards : [];
 };
 
-const isHumanWinner = (table: TableState) => table.winner === table.players[0]?.name;
+const isHumanWinner = (table: TableState) =>
+  table.winner === table.players[0]?.name;
 
 const winnerHeadingClass = (table: TableState) =>
   isHumanWinner(table) ? "text-primary" : "text-error";
@@ -41,33 +44,50 @@ const getActiveTurnMsg = (s: TableState) => {
   return attacker ? getAttackerLabel(s.currentTurnId, attacker.name) : null;
 };
 
-const getTurnMsg = (s: TableState) => s.attack.length > 0 ? null : getActiveTurnMsg(s);
+const getTurnMsg = (s: TableState) =>
+  s.attack.length > 0 ? null : getActiveTurnMsg(s);
 
 const killTween = (ref: HTMLDivElement | undefined) => {
   if (ref) gsap.killTweensOf(ref);
 };
 
-const scheduleNoticeAnim = (ref: HTMLDivElement, target: HTMLDivElement | undefined) => {
+const scheduleNoticeAnim = (
+  ref: HTMLDivElement,
+  target: HTMLDivElement | undefined,
+) => {
   if (!target) return;
-  gsap.timeline().to(ref, { delay: 0.8, y: -window.innerHeight / 2 + 40, scale: 0.6, duration: 0.8, ease: "expo.out" });
+  gsap
+    .timeline()
+    .to(ref, {
+      delay: 0.8,
+      y: -window.innerHeight / 2 + 40,
+      scale: 0.6,
+      duration: 0.8,
+      ease: "expo.out",
+    });
 };
 
 const isActiveOrDef = (isActive: boolean, isDef: boolean) => isActive || isDef;
 
 const opponentRingClass = (active: boolean) =>
-  active ? "ring-4 ring-primary/40 ring-offset-4 ring-offset-surface" : "border-2 border-outline-variant/30";
+  active
+    ? "ring-4 ring-primary/40 ring-offset-4 ring-offset-surface"
+    : "border-2 border-outline-variant/30";
 
-const opponentNameClass = (active: boolean) => active ? "text-primary" : "text-on-surface";
+const opponentNameClass = (active: boolean) =>
+  active ? "text-primary" : "text-on-surface";
 
-const avatarSrc = (index: number) => avatars[index] || "https://i.pravatar.cc/100";
+const avatarSrc = (index: number) =>
+  avatars[index] || "https://i.pravatar.cc/100";
 
-const handCardCount = (hand: HandType | undefined) => hand ? hand.cards.length : 0;
+const handCardCount = (hand: HandType | undefined) =>
+  hand ? hand.cards.length : 0;
 
 export default function App() {
   const [state, setState] = createSignal<TableState>(table$.value);
   const [theme, setTheme] = createSignal<"midnight" | "daylight">(
     (localStorage.getItem("durak-theme") as "midnight" | "daylight") ||
-      "midnight"
+      "midnight",
   );
   const [notice, setNotice] = createSignal<string | null>(null);
   let noticeRef: HTMLDivElement | undefined;
@@ -137,7 +157,7 @@ export default function App() {
             const hand = state().hands.find((h) => h.playerId === player.id);
             const active = isActiveOrDef(
               state().currentTurnId === player.id,
-              state().currentDefendId === player.id
+              state().currentDefendId === player.id,
             );
 
             return (
@@ -172,7 +192,10 @@ export default function App() {
       {/* Center Center Playing Area */}
       <div class="relative w-full max-w-5xl h-80 border border-outline-variant/15 rounded-[3rem] flex items-center justify-center bg-surface-container/10 backdrop-blur-sm">
         {/* Table Cards Area */}
-        <div data-testid="table-cards" class="flex gap-14 relative px-12 items-center">
+        <div
+          data-testid="table-cards"
+          class="flex gap-14 relative px-12 items-center"
+        >
           <For each={state().attack}>
             {(card, i) => (
               <div class="relative w-28 h-40 flex-shrink-0">
@@ -257,7 +280,9 @@ export default function App() {
       <Show when={notice()}>
         <div class="fixed inset-0 pointer-events-none flex items-center justify-center z-[200]">
           <div
-            ref={(el) => { noticeRef = el; }}
+            ref={(el) => {
+              noticeRef = el;
+            }}
             class="relative bg-primary px-10 py-3 skew-x-[-15deg] shadow-[0_20px_50px_rgba(0,0,0,0.4)] border-r-8 border-white/30"
           >
             <div class="absolute inset-0 bg-white/10 skew-x-[15deg] pointer-events-none"></div>
